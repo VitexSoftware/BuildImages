@@ -9,6 +9,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     sh 'if [ ! -d source ]; then git clone --depth 1 --single-branch $GIT_URL source ; else cd source; git pull; cd ..; fi;'
+		    sh 'ls -la'
+		    sh 'ls -la source'
                     sh 'cd source ; debuild -i -us -uc -b ; cd ..'
                     sh 'mkdir -p $WORKSPACE/dist/debian/ ; mv *.deb *.changes *.build $WORKSPACE/dist/debian/'
                 }

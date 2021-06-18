@@ -4,9 +4,11 @@ pipeline {
 
     options {
         ansiColor('xterm')
+        copyArtifactPermission('*');
     }
 
     stages {
+
         stage('debian-stable') {
             agent {
                 docker { image 'vitexsoftware/debian:stable' }
@@ -14,18 +16,20 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-                    buildPackage()
-                    installPackage()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-buster'
             }
-
             post {
                 success {
-                    addToRepository('buster')
                     archiveArtifacts 'dist/debian/'
+                    copyArtifact()
                 }
             }
+
+
+            
         }
 
         stage('debian-testing') {
@@ -35,18 +39,19 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-                    buildPackage()
-                    installPackage()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-bullseye'
             }
             post {
                 success {
-                    addToRepository('bullseye')
                     archiveArtifacts 'dist/debian/'
+                    copyArtifact()
                 }
             }
         }
+
         stage('ubuntu-trusty') {
             agent {
                 docker { image 'vitexsoftware/ubuntu:stable' }
@@ -54,18 +59,19 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-                    buildPackage()
-                    installPackage()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-trusty'
             }
             post {
                 success {
-                    addToRepository('trusty')
                     archiveArtifacts 'dist/debian/'
+                    copyArtifact()
                 }
             }
         }
+
         stage('ubuntu-hirsute') {
             agent {
                 docker { image 'vitexsoftware/ubuntu:testing' }
@@ -73,41 +79,52 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-                    buildPackage()
-                    installPackage()
+	            buildPackage()
+	            installPackages()
                 }
-                stash includes: 'dist/**', name: 'dist-hirsute'
+                stash includes: 'dist/**', name: 'dist-trusty'
             }
             post {
                 success {
-                    addToRepository('hirsute')
                     archiveArtifacts 'dist/debian/'
+                    copyArtifact()
                 }
             }
-       }
+        }
+
     }
+}
+
+def copyArtifact(){
+    step ([$class: 'CopyArtifact',
+        projectName: '${JOB_NAME}',
+        filter: "**/*.deb",
+        target: '/var/tmp/deb',
+        flatten: true,
+        selector: specific('${BUILD_NUMBER}')
+    ]);
 }
 
 def buildPackage() {
 
     def DIST = sh (
-        script: 'lsb_release -sc',
+    script: 'lsb_release -sc',
         returnStdout: true
     ).trim()
 
     def DISTRO = sh (
-        script: 'lsb_release -sd',
+    script: 'lsb_release -sd',
         returnStdout: true
     ).trim()
 
 
     def SOURCE = sh (
-        script: 'dpkg-parsechangelog --show-field Source',
+    script: 'dpkg-parsechangelog --show-field Source',
         returnStdout: true
     ).trim()
 
     def VERSION = sh (
-        script: 'dpkg-parsechangelog --show-field Version',
+    script: 'dpkg-parsechangelog --show-field Version',
         returnStdout: true
     ).trim()
 
@@ -115,35 +132,24 @@ def buildPackage() {
       echo '\033[42m\033[90mBuild debian package ' + SOURCE + ' v' + VERSION  + ' for ' + DISTRO  + '\033[0m'
     }
 
-    def VER = VERSION + '~' + DIST
+    def VER = VERSION + '~' + DIST + '~' + env.BUILD_NUMBER 
 
 //Buster problem: Can't continue: dpkg-parsechangelog is not new enough(needs to be at least 1.17.0)
 //
 //    debianPbuilder additionalBuildResults: '', 
-//          components: '', 
-//          distribution: DIST, 
-//          keyring: '', 
-//          mirrorSite: 'http://deb.debian.org/debian/', 
-//          pristineTarName: ''
+//	    components: '', 
+//	    distribution: DIST, 
+//	    keyring: '', 
+//	    mirrorSite: 'http://deb.debian.org/debian/', 
+//	    pristineTarName: ''
     sh 'dch -b -v ' + VER  + ' "' + env.BUILD_TAG  + '"'
     sh 'debuild-pbuilder  -i -us -uc -b'
     sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; mv ../' + SOURCE + '*_' + VER + '_*.deb ../' + SOURCE + '*_' + VER + '_*.changes ../' + SOURCE + '*_' + VER + '_*.build $WORKSPACE/dist/debian/'
 }
 
-def addToRepository( String dist ) {
-    def files = readFile "${env.WORKSPACE}/build/debian/package/debian/files"
-    def packages = files.readLines().collect { it[0.. it.indexOf(' ')] }
-    ansiColor('vga') {
-      echo '\033[42m\033[31mBuilded packages ' + packages.join(", ")  + '\033[0m'
-    }
-//    sh 'IFS="\n\b"; for package in  `ls $WORKSPACE/dist/debian/ | grep .deb | awk -F_ \'{print \$1}\'` ; do freight-add $package apt/' + dist + ' ; done;'
-}
-
-def installPackage() {
+def installPackages() {
     sh 'cd $WORKSPACE/dist/debian/ ; dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz; cd $WORKSPACE'
     sh 'echo "deb [trusted=yes] file:///$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
     sh 'sudo apt-get update'
-    sh 'sudo rm /var/cache/debconf/*.dat'
     sh 'IFS="\n\b"; for package in  `ls $WORKSPACE/dist/debian/ | grep .deb | awk -F_ \'{print \$1}\'` ; do sudo  DEBIAN_FRONTEND=noninteractive apt-get -y install $package ; done;'
 }
-

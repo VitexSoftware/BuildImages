@@ -7,28 +7,28 @@ node {
     }
 
     stage('debian-stable') {
-        def buster = docker.build("vitexsoftware/debian:stable", "-f Dockerfile ./Buster")
+        def buster = docker.build("vitexsoftware/debian:stable", "-f ./Buster/Dockerfile ")
 	buster.inside {
     	    banner()
 	}
     }
 
     stage('debian-testing') {
-        def bullseye = docker.build("vitexsoftware/debian:testing", "-f Dockerfile ./Bullseye")
+        def bullseye = docker.build("vitexsoftware/debian:testing", "-f ./Bullseye/Dockerfile ")
 	bullseye.inside {
     	    banner()
 	}
     }
 
     stage('ubuntu-trusty') {
-        def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f Dockerfile ./Trusty")
+        def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f ./Trusty/Dockerfile ")
 	trusty.inside {
     	    banner()
 	}
     }
 
     stage('ubuntu-hirsute') {
-        def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f Dockerfile ./Hirsute")
+        def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f ./Hirsute/Dockerfile ")
         hirstute.inside {
 	    banner()
         }

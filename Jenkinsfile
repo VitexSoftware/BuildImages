@@ -1,6 +1,9 @@
 #!groovy
 pipeline {
-    agent none
+
+    agent {
+        label 'linux_x64'
+    }
 
     options {
         ansiColor('xterm')
@@ -8,59 +11,53 @@ pipeline {
 
     stages {
 
-        stage('debian-stable') {
-            agent {
-		    dockerfile {
-		        filename 'Dockerfile'
-		        dir 'Buster'
-		        label 'vitexsoftware/debian:stable'
-		    }
+        stage('Clone repository') {
+	    checkout scm
+	}
 
-            }
+        stage('debian-stable') {
             steps {
-		banner()
+		script {
+	            def buster = docker.build("vitexsoftware/debian:stable", "-f Dockerfile ./Buster")
+		    buster.inside {
+        		banner()
+		    }
+		}
             }
         }
 
         stage('debian-testing') {
-            agent {
-		    dockerfile {
-		        filename 'Dockerfile'
-		        dir 'Bullseye'
-		        label 'vitexsoftware/debian:testing'
-		    }
-            }
             steps {
-		banner()
+		script {
+	            def bullseye = docker.build("vitexsoftware/debian:testing", "-f Dockerfile ./Bullseye")
+		    bullseye.inside {
+        		banner()
+		    }
+		}
             }
         }
 
         stage('ubuntu-trusty') {
-            agent {
-		    dockerfile {
-		        filename 'Dockerfile'
-		        dir 'Trusty'
-		        label 'vitexsoftware/ubuntu:stable'
-		    }
-            }
             steps {
-		banner();
+		script {
+	            def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f Dockerfile ./Trusty")
+		    trusty.inside {
+        		banner()
+		    }
+		}
             }
         }
 
         stage('ubuntu-hirsute') {
-            agent {
-		    dockerfile {
-		        filename 'Dockerfile'
-		        dir 'Hirsute'
-		        label 'vitexsoftware/ubuntu:testing'
-		    }
-            }
             steps {
-		banner();
+		script {
+	            def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f Dockerfile ./Hirsute")
+		    hirstute.inside {
+        		banner()
+		    }
+		}
             }
         }
-
     }
 }
 

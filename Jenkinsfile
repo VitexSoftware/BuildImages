@@ -1,9 +1,6 @@
 #!groovy
 
 node {
-    options {
-        ansiColor('xterm')
-    }
 
     stage('Clone repository') {
         checkout scm

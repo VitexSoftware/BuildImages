@@ -1,9 +1,7 @@
 #!groovy
 pipeline {
 
-    agent {
-        label 'linux_x64'
-    }
+    agent none
 
     options {
         ansiColor('xterm')

@@ -1,40 +1,76 @@
 #!groovy
 
-node {
+pipeline {
+    agent none
 
-    stage('Clone repository') {
-        checkout scm
+    options {
+        ansiColor('xterm')
     }
 
-    stage('debian-stable') {
-        def buster = docker.build("vitexsoftware/debian:stable", "-f ./Buster/Dockerfile ")
-	buster.inside {
-    	    banner()
+    stages {
+
+        stage('debian-stable') {
+    	    dockerfile {
+        	filename "Buster/Dockerfile"
+        	additionalBuildArgs "-t vitexsoftware/debian:stable"
+    	    }
+            steps {
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
 	}
-    }
 
-    stage('debian-testing') {
-        def bullseye = docker.build("vitexsoftware/debian:testing", "-f ./Bullseye/Dockerfile ")
-	bullseye.inside {
-    	    banner()
+        stage('debian-testing') {
+    	    dockerfile {
+        	filename "Bulseye/Dockerfile"
+        	additionalBuildArgs "-t vitexsoftware/debian:testing"
+    	    }
+            steps {
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
 	}
-    }
 
-    stage('ubuntu-trusty') {
-        def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f ./Trusty/Dockerfile ")
-	trusty.inside {
-    	    banner()
+        stage('ubuntu-stable') {
+    	    dockerfile {
+        	filename "Trusty/Dockerfile"
+        	additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
+    	    }
+            steps {
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
 	}
-    }
 
-    stage('ubuntu-hirsute') {
-        def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f ./Hirsute/Dockerfile ")
-        hirstute.inside {
-	    banner()
-        }
+        stage('ubuntu-testing') {
+    	    dockerfile {
+        	filename "Hirsute/Dockerfile"
+        	additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
+    	    }
+            steps {
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
+
     }
 }
-
 
 
 def banner() {

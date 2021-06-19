@@ -11,10 +11,6 @@ pipeline {
 
     stages {
 
-        stage('Clone repository') {
-	    checkout scm
-	}
-
         stage('debian-stable') {
             steps {
 		script {

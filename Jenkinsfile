@@ -10,10 +10,12 @@ pipeline {
     stages {
 
         stage('debian-stable') {
-    	    dockerfile {
-        	filename "Buster/Dockerfile"
-        	additionalBuildArgs "-t vitexsoftware/debian:stable"
-    	    }
+	    agent {
+        	dockerfile {
+        	    filename "Buster/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:stable"
+    		}
+	    }
             steps {
 	        checkout scm
     	    }
@@ -25,10 +27,12 @@ pipeline {
 	}
 
         stage('debian-testing') {
-    	    dockerfile {
-        	filename "Bulseye/Dockerfile"
-        	additionalBuildArgs "-t vitexsoftware/debian:testing"
-    	    }
+	    agent {
+    		dockerfile {
+        	    filename "Bulseye/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:testing"
+    		}
+	    }
             steps {
 	        checkout scm
     	    }
@@ -40,10 +44,12 @@ pipeline {
 	}
 
         stage('ubuntu-stable') {
-    	    dockerfile {
-        	filename "Trusty/Dockerfile"
-        	additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
-    	    }
+	    agent {
+    		dockerfile {
+        	    filename "Trusty/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
+    		}
+	    }
             steps {
 	        checkout scm
     	    }
@@ -55,10 +61,12 @@ pipeline {
 	}
 
         stage('ubuntu-testing') {
-    	    dockerfile {
-        	filename "Hirsute/Dockerfile"
-        	additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
-    	    }
+	    agent {
+        	dockerfile {
+        	    filename "Hirsute/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
+    		}
+	    }
             steps {
 	        checkout scm
     	    }
@@ -68,7 +76,6 @@ pipeline {
         	}
     	    }
 	}
-
     }
 }
 

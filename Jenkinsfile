@@ -55,8 +55,8 @@ node {
             }
         }
 
-    }
 }
+
 
 
 def banner() {

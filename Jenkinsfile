@@ -29,7 +29,7 @@ pipeline {
         stage('debian-testing') {
 	    agent {
     		dockerfile {
-        	    filename "Bulseye/Dockerfile"
+        	    filename "Bullseye/Dockerfile"
         	    additionalBuildArgs "-t vitexsoftware/debian:testing"
     		}
 	    }

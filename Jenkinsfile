@@ -1,19 +1,13 @@
 #!groovy
-pipeline {
 
-    agent none
-
+node {
     options {
         ansiColor('xterm')
     }
 
-    stages {
-
-        stage('Clone repository') {
-	    steps {
-        	checkout scm
-	    }
-	}
+    stage('Clone repository') {
+        checkout scm
+    }
 
         stage('debian-stable') {
             steps {
@@ -60,6 +54,7 @@ pipeline {
 		}
             }
         }
+
     }
 }
 

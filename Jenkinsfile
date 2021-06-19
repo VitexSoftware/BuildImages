@@ -6,58 +6,38 @@ node {
         checkout scm
     }
 
-        stage('debian-stable') {
-            steps {
-                checkout scm
-		script {
-	            def buster = docker.build("vitexsoftware/debian:stable", "-f Dockerfile ./Buster")
-		    buster.inside {
-        		banner()
-		    }
-		}
-            }
-        }
+    stage('debian-stable') {
+        def buster = docker.build("vitexsoftware/debian:stable", "-f Dockerfile ./Buster")
+	buster.inside {
+    	    banner()
+	}
+    }
 
-        stage('debian-testing') {
-            steps {
-                checkout scm
-		script {
-	            def bullseye = docker.build("vitexsoftware/debian:testing", "-f Dockerfile ./Bullseye")
-		    bullseye.inside {
-        		banner()
-		    }
-		}
-            }
-        }
+    stage('debian-testing') {
+        def bullseye = docker.build("vitexsoftware/debian:testing", "-f Dockerfile ./Bullseye")
+	bullseye.inside {
+    	    banner()
+	}
+    }
 
-        stage('ubuntu-trusty') {
-            steps {
-		script {
-	            def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f Dockerfile ./Trusty")
-		    trusty.inside {
-        		banner()
-		    }
-		}
-            }
-        }
+    stage('ubuntu-trusty') {
+        def trusty = docker.build("vitexsoftware/ubuntu:stable", "-f Dockerfile ./Trusty")
+	trusty.inside {
+    	    banner()
+	}
+    }
 
-        stage('ubuntu-hirsute') {
-            steps {
-		script {
-	            def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f Dockerfile ./Hirsute")
-		    hirstute.inside {
-        		banner()
-		    }
-		}
-            }
+    stage('ubuntu-hirsute') {
+        def hirsute = docker.build("vitexsoftware/ubuntu:testing", "-f Dockerfile ./Hirsute")
+        hirstute.inside {
+	    banner()
         }
-
+    }
 }
 
 
 
 def banner() {
-
     def DISTRO = sh (
         script: 'lsb_release -sd',
         returnStdout: true

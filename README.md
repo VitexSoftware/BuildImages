@@ -7,6 +7,9 @@ simply run
 make
 ```
 
-to prepar Debian/Ubuntu Docker imges with all requied for packaging inside.
+to prepare Debian/Ubuntu Docker imges with all requied for packaging process inside.
+
+
+
 
 

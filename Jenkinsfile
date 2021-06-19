@@ -46,7 +46,7 @@ pipeline {
         stage('ubuntu-stable') {
 	    agent {
     		dockerfile {
-        	    filename "Trusty/Dockerfile"
+        	    filename "Focal/Dockerfile"
         	    additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
     		}
 	    }

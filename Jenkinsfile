@@ -9,8 +9,15 @@ pipeline {
 
     stages {
 
+        stage('Clone repository') {
+	    steps {
+        	checkout scm
+	    }
+	}
+
         stage('debian-stable') {
             steps {
+                checkout scm
 		script {
 	            def buster = docker.build("vitexsoftware/debian:stable", "-f Dockerfile ./Buster")
 		    buster.inside {
@@ -22,6 +29,7 @@ pipeline {
 
         stage('debian-testing') {
             steps {
+                checkout scm
 		script {
 	            def bullseye = docker.build("vitexsoftware/debian:testing", "-f Dockerfile ./Bullseye")
 		    bullseye.inside {

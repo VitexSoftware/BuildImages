@@ -142,6 +142,8 @@ def buildPackage() {
 //	    keyring: '', 
 //	    mirrorSite: 'http://deb.debian.org/debian/', 
 //	    pristineTarName: ''
+
+    sh 'sudo apt-get update'
     sh 'dch -b -v ' + VER  + ' "' + env.BUILD_TAG  + '"'
     sh 'debuild-pbuilder  -i -us -uc -b'
     sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; mv ../' + SOURCE + '*_' + VER + '_*.deb ../' + SOURCE + '*_' + VER + '_*.changes ../' + SOURCE + '*_' + VER + '_*.build $WORKSPACE/dist/debian/'

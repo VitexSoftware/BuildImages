@@ -17,4 +17,4 @@ RUN \
     echo "Customized the sudoers file for passwordless access to the jenkins user!" && \
     echo "jenkins user:";  su - jenkins -c id
 
-RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini 
+RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile

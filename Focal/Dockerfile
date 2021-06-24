@@ -20,4 +20,4 @@ RUN \
 
 RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
 
-ADD ../Ubuntu/usrsharelocale.tar.gz /
+ADD usrsharelocale.tar.gz /

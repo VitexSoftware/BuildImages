@@ -19,3 +19,5 @@ RUN \
     echo "jenkins user:";  su - jenkins -c id
 
 RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
+
+ADD ../Ubuntu/usrsharelocale.tar.gz /

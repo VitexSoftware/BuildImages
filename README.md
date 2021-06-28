@@ -45,3 +45,12 @@ Some packages built this way
   * https://github.com/PureHTML/mcfly/
   * https://github.com/Vitexus/phpDocumentor-deb/
   * https://github.com/Vitexus/automated-time-tracking-with-toggl-on-linux/
+
+
+
+
+Update listing time using:
+
+```shell
+find /var/lib/jenkins/ -name "config.xml" | grep "jenkins" | xargs cat | grep projectUrl | sed 's/     <projectUrl>/ \* /g' | sed 's/<\/projectUrl>//g'
+```

@@ -20,3 +20,12 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:testing' -a -q)
 
 reset: clean all
+
+push:
+	docker push vitexsoftware/debian:stable
+	docker push vitexsoftware/debian:testing
+	docker push vitexsoftware/ubuntu:stable
+	docker push vitexsoftware/ubuntu:testing
+
+publish: all push
+

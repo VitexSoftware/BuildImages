@@ -15,6 +15,37 @@ Add [JenkinsfileDEB](JenkinsfileDEB) into your package source as Jenkinsfile or 
 testing install into docker container
 
 
+Ready to use images 
+-------------------
+
+
+  * [Debian](https://hub.docker.com/r/vitexsoftware/debian/tags?page=1&ordering=last_updated)
+
+```shell
+    docker pull vitexsoftware/debian:stable
+```
+
+
+```shell
+    docker pull vitexsoftware/debian:testing
+```
+
+
+
+
+  * [Ubuntu](https://hub.docker.com/r/vitexsoftware/ubuntu/tags?page=1&ordering=last_updated)
+
+
+```shell
+    docker pull vitexsoftware/ubuntu:stable
+```
+
+
+```shell
+    docker pull vitexsoftware/ubuntu:testing
+```
+
+
 
 Some packages built this way
 ----------------------------

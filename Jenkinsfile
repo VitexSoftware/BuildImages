@@ -10,10 +10,27 @@ pipeline {
 
     stages {
 
-        stage('debian-stable') {
+        stage('debian-oldstable') {
 	    agent {
         	dockerfile {
         	    filename "Buster/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:oldstable"
+    		}
+	    }
+            steps {
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
+
+        stage('debian-stable') {
+	    agent {
+        	dockerfile {
+        	    filename "Bullseye/Dockerfile"
         	    additionalBuildArgs "-t vitexsoftware/debian:stable"
     		}
 	    }
@@ -30,7 +47,7 @@ pipeline {
         stage('debian-testing') {
 	    agent {
     		dockerfile {
-        	    filename "Bullseye/Dockerfile"
+        	    filename "Bookworm/Dockerfile"
         	    additionalBuildArgs "-t vitexsoftware/debian:testing"
     		}
 	    }

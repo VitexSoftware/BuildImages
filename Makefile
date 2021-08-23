@@ -1,9 +1,12 @@
 all: buster bullseye focal hirsute
 
 buster:
-	docker build -t vitexsoftware/debian:stable -f Buster/Dockerfile Buster/
+	docker build -t vitexsoftware/debian:oldstable -f Buster/Dockerfile Buster/
 
 bullseye:
+	docker build -t vitexsoftware/debian:stable -f Bullseye/Dockerfile Bullseye/
+
+bookworm:
 	docker build -t vitexsoftware/debian:testing -f Bullseye/Dockerfile Bullseye/
 
 focal:
@@ -14,6 +17,7 @@ hirsute:
 
 clean:
 	docker system prune -a -f
+	docker rmi $$(docker images 'vitexsoftware/debian:oldstable' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:stable' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:testing' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:stable' -a -q)
@@ -22,6 +26,7 @@ clean:
 reset: clean all
 
 push:
+	docker push vitexsoftware/debian:oldstable
 	docker push vitexsoftware/debian:stable
 	docker push vitexsoftware/debian:testing
 	docker push vitexsoftware/ubuntu:stable

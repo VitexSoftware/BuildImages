@@ -18,12 +18,28 @@ testing install into docker container
 Ready to use images 
 -------------------
 
+```shell
+    docker pull vitexsoftware/debian:oldstable
+```
 
   * [Debian](https://hub.docker.com/r/vitexsoftware/debian/tags?page=1&ordering=last_updated)
+
+	Buster
+	------
+```shell
+    docker pull vitexsoftware/debian:oldstable
+```
+
+	Bullseye
+	--------
+
 
 ```shell
     docker pull vitexsoftware/debian:stable
 ```
+
+	Bookworm
+	--------
 
 
 ```shell

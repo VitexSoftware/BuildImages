@@ -24,6 +24,12 @@ Ready to use images
 
   * [Debian](https://hub.docker.com/r/vitexsoftware/debian/tags?page=1&ordering=last_updated)
 
+	Stretch
+	------
+```shell
+    docker pull vitexsoftware/debian:lts
+```
+
 	Buster
 	------
 ```shell

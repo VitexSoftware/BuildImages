@@ -1,7 +1,5 @@
 #!groovy
 
-//
-
 pipeline {
     agent none
 
@@ -112,15 +110,14 @@ pipeline {
             }
         }
     }
+}
 
-    def banner() {
-        def DISTRO = sh (
+def banner() {
+    def DISTRO = sh (
             script: 'lsb_release -sd',
             returnStdout: true
         ).trim()
-        ansiColor('vga') {
+    ansiColor('vga') {
             echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + DISTRO  + '\033[0m'
-        }
     }
-
 }

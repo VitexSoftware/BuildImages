@@ -1,0 +1,49 @@
+---
+- name: Deb package builder
+  hosts: all
+  become: true
+  become_method: sudo
+
+  tasks:
+  - name: import the vitexsoftware apt key
+    apt_key:
+      url: https://repo.vitexsoftware.cz/keyring.gpg
+      state: present
+
+  - name: Add VitexSoftweare repo
+    apt_repository:
+      repo: deb http://repo.vitexsoftware.cz {{ ansible_distribution_release }} main backports
+      state: present
+
+  - name: Add Debian Buster repo
+    apt_repository:
+      repo: deb http://ftp.debian.org/debian {{ ansible_distribution_release }} main contrib
+      state: present
+      
+  - name: Add Debian Buster Updates repo
+    apt_repository:
+      repo: deb http://ftp.debian.org/debian {{ ansible_distribution_release }}-updates main contrib
+      state: present
+      
+  - name: Update apt-get repo and cache
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+  - name: Upgrade all apt packages
+    apt: upgrade=dist force_apt_get=yes
+    
+  - name: install basic packages
+    apt:
+      name: ['pbuilder','sudo','curl','wget','php','composer','lsb-release','jq','moreutils','aptitude','gdebi-core','apt-utils','debhelper','po-debconf','locales-all']
+      state: present
+
+#TODO:
+#RUN \
+#    groupadd -g 114 jenkins && useradd -u 107 -g jenkins -G sudo -m -s /bin/bash jenkins && \
+#    sed -i /etc/sudoers -re 's/^%sudo.*/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' && \
+#    sed -i /etc/sudoers -re 's/^root.*/root ALL=(ALL:ALL) NOPASSWD: ALL/g' && \
+#    sed -i /etc/sudoers -re 's/^#includedir.*/## **Removed the include directive** ##"/g' && \
+#    echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+#    echo "Customized the sudoers file for passwordless access to the jenkins user!" && \
+#    echo "jenkins user:";  su - jenkins -c id
+#
+#RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile

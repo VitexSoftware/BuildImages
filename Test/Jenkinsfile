@@ -82,7 +82,7 @@ pipeline {
 
         stage('ubuntu-focal') {
             agent {
-                docker { image 'vitexsoftware/ubuntu:stable' }
+                docker { image 'vitexsoftware/ubuntu:focal' }
             }
             steps {
                 dir('build/debian/package') {
@@ -102,7 +102,7 @@ pipeline {
 
         stage('ubuntu-hirsute') {
             agent {
-                docker { image 'vitexsoftware/ubuntu:testing' }
+                docker { image 'vitexsoftware/ubuntu:hirsute' }
             }
             steps {
                 dir('build/debian/package') {

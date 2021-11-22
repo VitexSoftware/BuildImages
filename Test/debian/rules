@@ -5,8 +5,14 @@
 #export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+VERSION := $(shell dpkg-parsechangelog --show-field Version)
+
 %:
 	dh $@  
+
+override_dh_install:
+	dh_install
+	sed -i '/ldd2debs/ c\	echo "ldd2debs v.$(VERSION)"' debian/ldd2debs/usr/bin/ldd2debs
 
 override_dh_auto_test:
 	: # do nothing

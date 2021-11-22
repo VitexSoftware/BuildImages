@@ -12,7 +12,7 @@ pipeline {
         stage('debian-lts') {
             agent {
                 dockerfile {
-                    filename 'Stretch/Dockerfile'
+                    filename 'stretch/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch'
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
         stage('debian-oldstable') {
             agent {
                 dockerfile {
-                    filename 'Buster/Dockerfile'
+                    filename 'buster/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/debian:buster -t vitexsoftware/debian:oldstable'
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
         stage('debian-stable') {
             agent {
                 dockerfile {
-                    filename 'Bullseye/Dockerfile'
+                    filename 'bullseye/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/debian:bullseye -t vitexsoftware/debian:stable'
                 }
             }
@@ -62,7 +62,7 @@ pipeline {
         stage('debian-testing') {
             agent {
                 dockerfile {
-                    filename 'Bookworm/Dockerfile'
+                    filename 'bookworm/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/debian:bookworm -t vitexsoftware/debian:testing'
                 }
             }
@@ -79,7 +79,7 @@ pipeline {
         stage('ubuntu-stable') {
             agent {
                 dockerfile {
-                    filename 'Focal/Dockerfile'
+                    filename 'focal/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/ubuntu:focal -t vitexsoftware/ubuntu:stable'
                 }
             }
@@ -96,7 +96,7 @@ pipeline {
         stage('ubuntu-testing') {
             agent {
                 dockerfile {
-                    filename 'Hirsute/Dockerfile'
+                    filename 'hirsute/Dockerfile'
                     additionalBuildArgs '-t vitexsoftware/ubuntu:hirsute -t vitexsoftware/ubuntu:testing'
                 }
             }
@@ -113,11 +113,11 @@ pipeline {
 }
 
 def banner() {
-    def DISTRO = sh (
+    distro = sh (
             script: 'lsb_release -sd',
             returnStdout: true
         ).trim()
     ansiColor('vga') {
-            echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + DISTRO  + '\033[0m'
+            echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro  + '\033[0m'
     }
 }

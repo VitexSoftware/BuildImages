@@ -1,0 +1,20 @@
+Source: buildimages
+Section: development
+Priority: optional
+Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
+Build-Depends: debhelper-compat (>= 9)
+Standards-Version: 4.5.0
+Homepage: https://github.com/VitexSoftware/BuildImages
+Vcs-Git: https://github.com/VitexSoftware/BuildImages.git
+Vcs-Browser: https://github.com/VitexSoftware/BuildImages
+
+Package: vitexsoftware-build-images
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+	${shlibs:Depends},
+	docker-ce-cli
+
+Description: pull current VitexSoftware's build images
+ This Debian binary package was used to test of
+ deb packaging docker images for several distros

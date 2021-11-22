@@ -24,3 +24,6 @@ RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php
 RUN sed -i -e 's/11/12/g' /usr/lib/os-release ; sed -i -e 's/bullseye/bookworm/g' /usr/lib/os-release ; 
 RUN apt-get update && apt-get install -y php8.1-xml 
 #TODO: Remove when stabilized
+
+RUN echo "deb [signed-by=/etc/apt/trusted.gpg.d/vitexsoftware.gpg] http://repo.vitexsoftware.com $(lsb_release -sc) main backports" | tee /etc/apt/sources.list.d/vitexsoftware.com.list;  apt update
+

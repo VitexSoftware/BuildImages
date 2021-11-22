@@ -21,3 +21,5 @@ RUN \
 RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
 
 ADD usrsharelocale.tar.gz /
+
+RUN echo "deb [signed-by=/etc/apt/trusted.gpg.d/vitexsoftware.gpg] http://repo.vitexsoftware.com $(lsb_release -sc) main backports" | tee /etc/apt/sources.list.d/vitexsoftware.com.list;  apt update

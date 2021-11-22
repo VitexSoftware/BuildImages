@@ -27,8 +27,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-		            buildPackage()
-		            installPackages()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-buster'
             }
@@ -47,8 +47,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-		            buildPackage()
-		            installPackages()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-bullseye'
             }
@@ -67,8 +67,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-		            buildPackage()
-		            installPackages()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-bookworm'
             }
@@ -87,8 +87,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-		            buildPackage()
-		            installPackages()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-focal'
             }
@@ -107,8 +107,8 @@ pipeline {
             steps {
                 dir('build/debian/package') {
                     checkout scm
-		            buildPackage()
-		            installPackages()
+	            buildPackage()
+	            installPackages()
                 }
                 stash includes: 'dist/**', name: 'dist-hirsute'
             }

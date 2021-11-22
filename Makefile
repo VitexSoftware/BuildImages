@@ -1,22 +1,22 @@
 all: stretch buster bullseye bookworm focal hirsute
 
 stretch:
-	docker build -t vitexsoftware/debian:lts -f Stretch/Dockerfile Stretch/
+	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f Stretch/Dockerfile Stretch/
 
 buster:
-	docker build -t vitexsoftware/debian:oldstable -f Buster/Dockerfile Buster/
+	docker build -t vitexsoftware/debian:oldstable -t vitexsoftware/debian:buster -f Buster/Dockerfile Buster/
 
 bullseye:
-	docker build -t vitexsoftware/debian:stable -f Bullseye/Dockerfile Bullseye/
+	docker build -t vitexsoftware/debian:stable -t vitexsoftware/debian:bullseye   -f Bullseye/Dockerfile Bullseye/
 
 bookworm:
-	docker build -t vitexsoftware/debian:testing -f Bookworm/Dockerfile Bookworm/
+	docker build -t vitexsoftware/debian:testing -t vitexsoftware/debian:bookworm -f Bookworm/Dockerfile Bookworm/
 
 focal:
-	docker build -t vitexsoftware/ubuntu:stable -f Focal/Dockerfile Focal/
+	docker build -t vitexsoftware/ubuntu:lts -t vitexsoftware/ubuntu:focal -f Focal/Dockerfile Focal/
 
 hirsute:
-	docker build -t vitexsoftware/ubuntu:testing -f Hirsute/Dockerfile Hirsute/
+	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:hirsute -f Hirsute/Dockerfile Hirsute/
 
 clean:
 	docker system prune -a -f

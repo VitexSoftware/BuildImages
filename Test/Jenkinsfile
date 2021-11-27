@@ -22,7 +22,7 @@ pipeline {
 
         stage('debian-buster') {
             agent {
-                docker { image 'vitexsoftware/debian:oldstable' }
+                docker { image 'vitexsoftware/debian:buster' }
             }
             steps {
                 dir('build/debian/package') {
@@ -42,7 +42,7 @@ pipeline {
 
         stage('debian-bullseye') {
             agent {
-                docker { image 'vitexsoftware/debian:stable' }
+                docker { image 'vitexsoftware/debian:bullseye' }
             }
             steps {
                 dir('build/debian/package') {
@@ -62,11 +62,13 @@ pipeline {
 
         stage('debian-bookworm') {
             agent {
-                docker { image 'vitexsoftware/debian:testing' }
+                docker { image 'vitexsoftware/debian:bookworm' }
             }
             steps {
                 dir('build/debian/package') {
                     checkout scm
+		    sh 'sudo apt update'
+		    sh 'sudo apt install -y php-xml' //TODO: Remove after upstream dependency fix
 	            buildPackage()
 	            installPackages()
                 }
@@ -182,5 +184,11 @@ def installPackages() {
     sh 'echo "deb [trusted=yes] file:////$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
     sh 'sudo apt-get update'
     sh 'echo "${GREEN} INSTALATION ${ENDCOLOR}"'
-    sh 'IFS="\n\b"; for package in  `ls $WORKSPACE/dist/debian/ | grep .deb | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + DEBCONF_DEBUG  + ' apt-get -y install $package ; done;'
+    if(env.POSTINST){
+        run = 'echo "${GREEN} Testing launch of installed ${ENDCOLOR}"; ' + env.POSTINST + ';'
+    } else {
+        run = ''
+    }
+
+    sh 'IFS="\n\b"; for package in  `ls $WORKSPACE/dist/debian/ | grep .deb | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + DEBCONF_DEBUG  + ' apt-get -y install $package ; ' + run + ' done;'
 }

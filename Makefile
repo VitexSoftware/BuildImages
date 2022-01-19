@@ -1,22 +1,26 @@
-all: stretch buster bullseye bookworm focal hirsute
+all: stretch buster bullseye bookworm focal hirsute impish
 
 stretch:
-	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f Stretch/Dockerfile Stretch/
+	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f stretch/Dockerfile stretch/
 
 buster:
-	docker build -t vitexsoftware/debian:oldstable -t vitexsoftware/debian:buster -f Buster/Dockerfile Buster/
+	docker build -t vitexsoftware/debian:oldstable -t vitexsoftware/debian:buster -f buster/Dockerfile buster/
 
 bullseye:
-	docker build -t vitexsoftware/debian:stable -t vitexsoftware/debian:bullseye   -f Bullseye/Dockerfile Bullseye/
+	docker build -t vitexsoftware/debian:stable -t vitexsoftware/debian:bullseye   -f bullseye/Dockerfile bullseye/
 
 bookworm:
-	docker build -t vitexsoftware/debian:testing -t vitexsoftware/debian:bookworm -f Bookworm/Dockerfile Bookworm/
+	docker build -t vitexsoftware/debian:testing -t vitexsoftware/debian:bookworm -f bookworm/Dockerfile bookworm/
 
 focal:
-	docker build -t vitexsoftware/ubuntu:lts -t vitexsoftware/ubuntu:focal -f Focal/Dockerfile Focal/
+	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:focal -f focal/Dockerfile focal/
 
 hirsute:
-	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:hirsute -f Hirsute/Dockerfile Hirsute/
+	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:hirsute -f hirsute/Dockerfile hirsute/
+
+hirsute:
+	docker build -t vitexsoftware/ubuntu:rolling -t vitexsoftware/ubuntu:impish -f impish/Dockerfile hirsute/
+
 
 clean:
 	docker system prune -a -f
@@ -26,6 +30,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/debian:testing' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:stable' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:testing' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/ubuntu:rolling' -a -q)
 
 reset: clean all
 
@@ -34,6 +39,7 @@ push:
 	docker push vitexsoftware/debian:oldstable
 	docker push vitexsoftware/debian:stable
 	docker push vitexsoftware/debian:testing
+	docker push vitexsoftware/debian:rooling
 	docker push vitexsoftware/ubuntu:stable
 	docker push vitexsoftware/ubuntu:testing
 

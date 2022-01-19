@@ -109,6 +109,23 @@ pipeline {
                 }
             }
         }
+
+        stage('ubuntu-impish') {
+            agent {
+                dockerfile {
+                    filename 'hirsute/Dockerfile'
+                    additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
+                }
+            }
+            steps {
+                checkout scm
+            }
+            post {
+                success {
+                    banner()
+                }
+            }
+        }
     }
 }
 

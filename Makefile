@@ -39,7 +39,7 @@ push:
 	docker push vitexsoftware/debian:oldstable
 	docker push vitexsoftware/debian:stable
 	docker push vitexsoftware/debian:testing
-	docker push vitexsoftware/debian:rooling
+	docker push vitexsoftware/debian:rolling
 	docker push vitexsoftware/ubuntu:stable
 	docker push vitexsoftware/ubuntu:testing
 

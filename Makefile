@@ -18,8 +18,8 @@ focal:
 hirsute:
 	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:hirsute -f hirsute/Dockerfile hirsute/
 
-hirsute:
-	docker build -t vitexsoftware/ubuntu:rolling -t vitexsoftware/ubuntu:impish -f impish/Dockerfile hirsute/
+impish:
+	docker build -t vitexsoftware/ubuntu:rolling -t vitexsoftware/ubuntu:impish -f impish/Dockerfile impish/
 
 
 clean:

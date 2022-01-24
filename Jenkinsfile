@@ -112,10 +112,7 @@ pipeline {
 
         stage('ubuntu-impish') {
             agent {
-                dockerfile {
-                    filename 'impish/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
-                }
+                agentAction('ubuntu','impish','rolling');
             }
             steps {
                 checkout scm
@@ -126,15 +123,32 @@ pipeline {
                 }
             }
         }
+
+    }
+}
+
+def agentAction(distro,code,type){
+    architecture = sh (
+            script: 'dpkg --print-architecture',
+            returnStdout: true
+        ).trim()
+
+    dockerfile {
+        filename code + '/Dockerfile'
+        additionalBuildArgs ' --platform linux/ ' + architecture + ' -t vitexsoftware/' + distro + ':' + code + ' -t vitexsoftware/' + distro + ':' + type
     }
 }
 
 def banner() {
+    architecture = sh (
+            script: 'dpkg --print-architecture',
+            returnStdout: true
+        ).trim()
     distro = sh (
             script: 'lsb_release -sd',
             returnStdout: true
         ).trim()
     ansiColor('vga') {
-            echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro  + '\033[0m'
+            echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro + ' ' + architecture  + '\033[0m'
     }
 }

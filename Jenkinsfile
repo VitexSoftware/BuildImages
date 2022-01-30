@@ -26,7 +26,7 @@ pipeline {
                         stage('Build') {
 
                             steps {
-                                def dis = ${ DIST }.split('-', -1)
+                                dis = ${ DIST }.split('-', -1)
                                 distro = dis[0]
                                 release = dis[1]
 

@@ -1,8 +1,6 @@
 #!groovy
 
 pipeline {
-    agent none
-
     options {
         ansiColor('xterm')
         disableConcurrentBuilds()

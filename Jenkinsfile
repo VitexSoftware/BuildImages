@@ -9,6 +9,36 @@ pipeline {
     }
 
     stages {
+
+        stages {
+            stage('ArchitecturesBuild') {
+                matrix {
+                    agent any
+                    axes {
+                        axis {
+                            name 'ARCH'
+                            values 'amd64', 'i386', 'armel', 'aarch64'
+                        }
+                        axis {
+                            name 'DIST'
+                            values 'debian-stretch', 'debian-buster', 'debian-bullseye', 'debian-bookworm', 'ubuntu-focal', 'ubuntu-impish'
+                        }
+                    }
+                }
+                stages {
+                        stage('Build') {
+                            steps {
+                                echo "Do Build for ${ARCH} - ${DIST}"
+                            }
+                        }
+                        stage('Test') {
+                            steps {
+                                echo "Do Test for ${ARCH} - ${DIST}"
+                            }
+                        }
+                }
+            }
+
         stage('debian-lts') {
             agent {
                 dockerfile {
@@ -125,7 +155,7 @@ pipeline {
         }
 
     }
-}
+    }
 
 def agentAction(distro,code,type){
     architecture = sh (

@@ -155,8 +155,6 @@ pipeline {
         }
 
         }
-    }
-
     // def agentAction(distro,code,type){
     //     architecture = sh (
     //             script: 'dpkg --print-architecture',
@@ -182,3 +180,6 @@ pipeline {
                 echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro + ' ' + architecture  + '\033[0m'
         }
     }
+
+    }
+}

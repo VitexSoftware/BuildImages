@@ -22,7 +22,6 @@ pipeline {
                 stages {
                         stage('Build') {
                             agent {
-                                label "${ARCH}"
                                 dockerfile {
                                     filename "${DIST}/Dockerfile"
                                     additionalBuildArgs " --architecture ${ARCH} -t vitexsoftware/${DIST}"

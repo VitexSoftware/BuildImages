@@ -9,13 +9,6 @@ pipeline {
     stages {
         stage('ArchitecturesBuild') {
             matrix {
-                agent {
-                    label "${ARCH}"
-                    dockerfile {
-                        filename "${DIST}/Dockerfile"
-                        additionalBuildArgs " --architecture ${ARCH} -t vitexsoftware/${DIST}"
-                    }
-                }
                 axes {
                     axis {
                         name 'ARCH'
@@ -25,6 +18,26 @@ pipeline {
                         name 'DIST'
                         values 'debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish'
                     }
+                }
+                stages {
+                        stage('Build') {
+                            agent {
+                                label "${ARCH}"
+                                dockerfile {
+                                    filename "${DIST}/Dockerfile"
+                                    additionalBuildArgs " --architecture ${ARCH} -t vitexsoftware/${DIST}"
+                                }
+                            }
+                            steps {
+                                echo "Do Build for ${ARCH}: ${DIST} "
+                                checkout scm
+                            }
+                        }
+                        stage('Publish') {
+                            steps {
+                                echo "Docker push  ${ARCH}: ${DIST}"
+                            }
+                        }
                 }
                 post {
                     success {

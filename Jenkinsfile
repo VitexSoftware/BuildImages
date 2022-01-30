@@ -157,17 +157,17 @@ pipeline {
         }
     }
 
-    def agentAction(distro,code,type){
-        architecture = sh (
-                script: 'dpkg --print-architecture',
-                returnStdout: true
-            ).trim()
+    // def agentAction(distro,code,type){
+    //     architecture = sh (
+    //             script: 'dpkg --print-architecture',
+    //             returnStdout: true
+    //         ).trim()
 
-        dockerfile {
-            filename code + '/Dockerfile'
-            additionalBuildArgs ' --platform linux/ ' + architecture + ' -t vitexsoftware/' + distro + ':' + code + ' -t vitexsoftware/' + distro + ':' + type
-        }
-    }
+    //     dockerfile {
+    //         filename code + '/Dockerfile'
+    //         additionalBuildArgs ' --platform linux/ ' + architecture + ' -t vitexsoftware/' + distro + ':' + code + ' -t vitexsoftware/' + distro + ':' + type
+    //     }
+    // }
 
     def banner() {
         architecture = sh (
@@ -182,5 +182,3 @@ pipeline {
                 echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro + ' ' + architecture  + '\033[0m'
         }
     }
-
-}

@@ -5,7 +5,7 @@ pipeline {
         ansiColor('xterm')
         disableConcurrentBuilds()
     }
-
+    agent none
     stages {
         stage('ArchitecturesBuild') {
             matrix {
@@ -23,21 +23,8 @@ pipeline {
                     }
                     axis {
                         name 'DIST'
-                        values 'debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute'. 'ubuntu:impish'
+                        values 'debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish'
                     }
-                }
-                stages {
-                        stage('Build') {
-                            steps {
-                                echo "Do Build for ${ARCH}: ${DIST} "
-                                checkout scm
-                            }
-                        }
-                        stage('Publish') {
-                            steps {
-                                echo "Do Test for  ${ARCH}: ${DIST}"
-                            }
-                        }
                 }
                 post {
                     success {

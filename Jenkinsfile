@@ -1,52 +1,12 @@
 #!groovy
 
-pipeline {
-    options {
-        ansiColor('xterm')
-        disableConcurrentBuilds()
-    }
-    agent none
-    stages {
-        stage('ArchitecturesBuild') {
-            matrix {
-                axes {
-                    axis {
-                        name 'ARCH'
-                        values 'amd64', 'i386', 'armel', 'aarch64'
-                    }
-                    axis {
-                        name 'DIST'
-                        values 'debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish'
-                    }
-                }
-                stages {
-                        stage('Build') {
-                            agent {
-                                dockerfile {
-                                    filename "${DIST}/Dockerfile"
-                                    additionalBuildArgs " --architecture ${ARCH} -t vitexsoftware/${DIST}"
-                                }
-                            }
-                            steps {
-                                echo "Do Build for ${ARCH}: ${DIST} "
-                                checkout scm
-                            }
-                        }
-                        stage('Publish') {
-                            steps {
-                                echo "Docker push  ${ARCH}: ${DIST}"
-                            }
-                        }
-                }
-                post {
-                    success {
-                        banner()
-                    }
-                }
-            }
-        }
-    }
-}
+String[] arch = ['amd64', 'i386', 'armel', 'aarch64']
+String[] dist = ['debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish']
+
+String dockerfile =  "${DIST}/Dockerfile"
+String buildArgs = " --architecture ${ARCH} -t vitexsoftware/${DIST}"
+
+arch.eachWithIndex { val, idx -> println "$val in position $idx" }
 
 def banner() {
     distro = sh (

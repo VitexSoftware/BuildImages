@@ -167,6 +167,9 @@ pipeline {
     //     }
     // }
 
+
+    }
+
     def banner() {
         architecture = sh (
                 script: 'dpkg --print-architecture',
@@ -181,5 +184,4 @@ pipeline {
         }
     }
 
-    }
 }

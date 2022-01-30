@@ -1,6 +1,5 @@
 #!groovy
 
-@CompileDynamic
 pipeline {
     agent none
 

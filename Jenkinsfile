@@ -37,123 +37,123 @@ pipeline {
             }
         }
 
-        stage('debian-lts') {
-            agent {
-                dockerfile {
-                    filename 'stretch/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
-        stage('debian-oldstable') {
-            agent {
-                dockerfile {
-                    filename 'buster/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:buster -t vitexsoftware/debian:oldstable'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('debian-lts') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'stretch/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
+        // stage('debian-oldstable') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'buster/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/debian:buster -t vitexsoftware/debian:oldstable'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
 
-        stage('debian-stable') {
-            agent {
-                dockerfile {
-                    filename 'bullseye/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:bullseye -t vitexsoftware/debian:stable'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('debian-stable') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'bullseye/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/debian:bullseye -t vitexsoftware/debian:stable'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
 
-        stage('debian-testing') {
-            agent {
-                dockerfile {
-                    filename 'bookworm/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:bookworm -t vitexsoftware/debian:testing'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('debian-testing') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'bookworm/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/debian:bookworm -t vitexsoftware/debian:testing'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
 
-        stage('ubuntu-stable') {
-            agent {
-                dockerfile {
-                    filename 'focal/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:focal -t vitexsoftware/ubuntu:stable'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('ubuntu-stable') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'focal/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/ubuntu:focal -t vitexsoftware/ubuntu:stable'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
 
-        stage('ubuntu-testing') {
-            agent {
-                dockerfile {
-                    filename 'hirsute/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:hirsute -t vitexsoftware/ubuntu:testing'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('ubuntu-testing') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'hirsute/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/ubuntu:hirsute -t vitexsoftware/ubuntu:testing'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
 
-        stage('ubuntu-impish') {
-            agent {
-                dockerfile {
-                    filename 'impish/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+        // stage('ubuntu-impish') {
+        //     agent {
+        //         dockerfile {
+        //             filename 'impish/Dockerfile'
+        //             additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
+        //         }
+        //     }
+        //     steps {
+        //         checkout scm
+        //     }
+        //     post {
+        //         success {
+        //             banner()
+        //         }
+        //     }
+        // }
     }
 }
 

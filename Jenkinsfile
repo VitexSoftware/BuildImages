@@ -14,7 +14,7 @@ architectures.each {
     distributions.each {
         distribution = it
         dockerfile =  distribution + '/Dockerfile'
-        buildArgs = ' --architecture ' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
+        buildArgs = ' --platform ' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
         echo buildArgs
         def customImage = docker.build(vendor + '/' + distribution, buildArgs)
     }

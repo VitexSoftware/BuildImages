@@ -24,13 +24,18 @@ pipeline {
                 }
                 stages {
                         stage('Build') {
+                            def dis = ${ DIST }.split('-', -1)
+                            def distro = dis[0]
+                            def release = dis[1]
+
                             steps {
-                                echo "Do Build for ${ARCH} - ${DIST}"
+                                echo "Do Build for ${ARCH}: ${distro} ${release} "
                             }
                         }
+
                         stage('Test') {
                             steps {
-                                echo "Do Test for ${ARCH} - ${DIST}"
+                                echo "Do Test for  ${ARCH}: ${distro} ${release}"
                             }
                         }
                 }
@@ -138,22 +143,22 @@ pipeline {
         //     }
         // }
 
-        // stage('ubuntu-impish') {
-        //     agent {
-        //         dockerfile {
-        //             filename 'impish/Dockerfile'
-        //             additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
-        //         }
-        //     }
-        //     steps {
-        //         checkout scm
-        //     }
-        //     post {
-        //         success {
-        //             banner()
-        //         }
-        //     }
-        // }
+    // stage('ubuntu-impish') {
+    //     agent {
+    //         dockerfile {
+    //             filename 'impish/Dockerfile'
+    //             additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
+    //         }
+    //     }
+    //     steps {
+    //         checkout scm
+    //     }
+    //     post {
+    //         success {
+    //             banner()
+    //         }
+    //     }
+    // }
     }
 }
 

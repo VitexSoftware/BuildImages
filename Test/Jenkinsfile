@@ -5,167 +5,108 @@ pipeline {
 
     options {
         ansiColor('xterm')
-        disableConcurrentBuilds()
+	disableConcurrentBuilds()
     }
 
     stages {
 
-        stage('ArchitecturesBuild') {
-            matrix {
-                agent any
-                axes {
-                    axis {
-                        name 'ARCH'
-                        values 'amd64', 'i386', 'armel', 'aarch64'
-                    }
-                    axis {
-                        name 'DIST'
-                        values 'debian-stretch', 'debian-buster', 'debian-bullseye', 'debian-bookworm', 'ubuntu-focal', 'ubuntu-impish'
-                    }
-                }
-            }
-            stages {
-                    stage('Build') {
-                        steps {
-                            echo "Do Build for ${ARCH} - ${DIST}"
-                        }
-                    }
-                    stage('Test') {
-                        steps {
-                            echo "Do Test for ${ARCH} - ${DIST}"
-                        }
-                    }
-            }
-
-        stage('debian-lts') {
-            agent {
-                dockerfile {
-                    filename 'stretch/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
         stage('debian-oldstable') {
-            agent {
-                dockerfile {
-                    filename 'buster/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:buster -t vitexsoftware/debian:oldstable'
-                }
-            }
+	    agent {
+        	dockerfile {
+        	    filename "Buster/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:oldstable"
+    		}
+	    }
             steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
 
         stage('debian-stable') {
-            agent {
-                dockerfile {
-                    filename 'bullseye/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:bullseye -t vitexsoftware/debian:stable'
-                }
-            }
+	    agent {
+        	dockerfile {
+        	    filename "Bullseye/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:stable"
+    		}
+	    }
             steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
 
         stage('debian-testing') {
-            agent {
-                dockerfile {
-                    filename 'bookworm/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/debian:bookworm -t vitexsoftware/debian:testing'
-                }
-            }
+	    agent {
+    		dockerfile {
+        	    filename "Bookworm/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/debian:testing"
+    		}
+	    }
             steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
 
         stage('ubuntu-stable') {
-            agent {
-                dockerfile {
-                    filename 'focal/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:focal -t vitexsoftware/ubuntu:stable'
-                }
-            }
+	    agent {
+    		dockerfile {
+        	    filename "Focal/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
+    		}
+	    }
             steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
 
         stage('ubuntu-testing') {
-            agent {
-                dockerfile {
-                    filename 'hirsute/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:hirsute -t vitexsoftware/ubuntu:testing'
-                }
-            }
+	    agent {
+        	dockerfile {
+        	    filename "Hirsute/Dockerfile"
+        	    additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
+    		}
+	    }
             steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
-
-        stage('ubuntu-impish') {
-            agent {
-                dockerfile {
-                    filename 'impish/Dockerfile'
-                    additionalBuildArgs '-t vitexsoftware/ubuntu:impish -t vitexsoftware/ubuntu:rolling'
-                }
-            }
-            steps {
-                checkout scm
-            }
-            post {
-                success {
-                    banner()
-                }
-            }
-        }
+	        checkout scm
+    	    }
+    	    post {
+        	success {
+	    	    banner()
+        	}
+    	    }
+	}
     }
+}
 
-    def banner() {
-        distro = sh (
-                script: 'lsb_release -sd',
-                returnStdout: true
-            ).trim()
-        ansiColor('vga') {
-                echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + distro  + '\033[0m'
-        }
+
+def banner() {
+    def DISTRO = sh (
+        script: 'lsb_release -sd',
+        returnStdout: true
+    ).trim()
+
+    ansiColor('vga') {
+      echo '\033[42m\033[90mBuild VitexSoftware\'s Docker image for ' + DISTRO  + '\033[0m'
     }
-
 
 }
 

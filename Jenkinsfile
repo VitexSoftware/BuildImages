@@ -1,12 +1,23 @@
 #!groovy
 
-String[] arch = ['amd64', 'i386', 'armel', 'aarch64']
-String[] dist = ['debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish']
+String[] architectures = ['amd64', 'i386', 'armel', 'aarch64']
+String[] distributions = ['debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish']
 
-String dockerfile =  "${DIST}/Dockerfile"
-String buildArgs = " --architecture ${ARCH} -t vitexsoftware/${DIST}"
+String distribution = ''
+String architecture = ''
+String dockerfile = ''
+String buildArgs = ''
 
-arch.eachWithIndex { val, idx -> println "$val in position $idx" }
+architectures.each {
+    architecture = it
+    distributions.each {
+        distribution = it
+        dockerfile =  distribution + '/Dockerfile'
+        buildArgs = ' --architecture ' + architecture + ' -t vitexsoftware/' + distribution
+        echo buildArgs
+    }
+
+}
 
 def banner() {
     distro = sh (

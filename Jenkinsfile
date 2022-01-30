@@ -24,11 +24,12 @@ pipeline {
                 }
                 stages {
                         stage('Build') {
-                            def dis = ${ DIST }.split('-', -1)
-                            def distro = dis[0]
-                            def release = dis[1]
 
                             steps {
+                                def dis = ${ DIST }.split('-', -1)
+                                def distro = dis[0]
+                                def release = dis[1]
+
                                 echo "Do Build for ${ARCH}: ${distro} ${release} "
                             }
                         }

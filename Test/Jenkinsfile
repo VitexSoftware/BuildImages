@@ -5,95 +5,95 @@ pipeline {
 
     options {
         ansiColor('xterm')
-	disableConcurrentBuilds()
+    disableConcurrentBuilds()
     }
 
     stages {
 
         stage('debian-oldstable') {
-	    agent {
-        	dockerfile {
-        	    filename "Buster/Dockerfile"
-        	    additionalBuildArgs "-t vitexsoftware/debian:oldstable"
-    		}
-	    }
+        agent {
+            dockerfile {
+                filename "Buster/Dockerfile"
+                additionalBuildArgs "-t vitexsoftware/debian:oldstable"
+            }
+        }
             steps {
-	        checkout scm
-    	    }
-    	    post {
-        	success {
-	    	    banner()
-        	}
-    	    }
-	}
+            checkout scm
+            }
+            post {
+            success {
+                banner()
+            }
+            }
+    }
 
         stage('debian-stable') {
-	    agent {
-        	dockerfile {
-        	    filename "Bullseye/Dockerfile"
-        	    additionalBuildArgs "-t vitexsoftware/debian:stable"
-    		}
-	    }
+        agent {
+            dockerfile {
+                filename "Bullseye/Dockerfile"
+                additionalBuildArgs "-t vitexsoftware/debian:stable"
+            }
+        }
             steps {
-	        checkout scm
-    	    }
-    	    post {
-        	success {
-	    	    banner()
-        	}
-    	    }
-	}
+            checkout scm
+            }
+            post {
+            success {
+                banner()
+            }
+            }
+    }
 
         stage('debian-testing') {
-	    agent {
-    		dockerfile {
-        	    filename "Bookworm/Dockerfile"
-        	    additionalBuildArgs "-t vitexsoftware/debian:testing"
-    		}
-	    }
+        agent {
+            dockerfile {
+                filename "Bookworm/Dockerfile"
+                additionalBuildArgs "-t vitexsoftware/debian:testing"
+            }
+        }
             steps {
-	        checkout scm
-    	    }
-    	    post {
-        	success {
-	    	    banner()
-        	}
-    	    }
-	}
+            checkout scm
+            }
+            post {
+            success {
+                banner()
+            }
+            }
+    }
 
         stage('ubuntu-stable') {
-	    agent {
-    		dockerfile {
-        	    filename "Focal/Dockerfile"
-        	    additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
-    		}
-	    }
+        agent {
+            dockerfile {
+                filename "Focal/Dockerfile"
+                additionalBuildArgs "-t vitexsoftware/ubuntu:stable"
+            }
+        }
             steps {
-	        checkout scm
-    	    }
-    	    post {
-        	success {
-	    	    banner()
-        	}
-    	    }
-	}
+            checkout scm
+            }
+            post {
+            success {
+                banner()
+            }
+            }
+    }
 
         stage('ubuntu-testing') {
-	    agent {
-        	dockerfile {
-        	    filename "Hirsute/Dockerfile"
-        	    additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
-    		}
-	    }
+        agent {
+            dockerfile {
+                filename "Hirsute/Dockerfile"
+                additionalBuildArgs "-t vitexsoftware/ubuntu:testing"
+            }
+        }
             steps {
-	        checkout scm
-    	    }
-    	    post {
-        	success {
-	    	    banner()
-        	}
-    	    }
-	}
+            checkout scm
+            }
+            post {
+            success {
+                banner()
+            }
+            }
+    }
     }
 }
 

@@ -16,6 +16,9 @@ architectures.each {
         buildArgs = ' --platform linux/' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
         node( architecture ) {
             ansiColor('xterm') {
+                stage('GIT') {
+                    git url: env.GIT_URL
+                }
                 stage(architecture + '/' + distribution) {
                     def buildImage = docker.build(vendor + '/' + distribution, buildArgs)
                 }

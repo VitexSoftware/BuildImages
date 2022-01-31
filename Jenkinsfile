@@ -1,6 +1,6 @@
 #!groovy
 
-String[] architectures = ['amd64', 'i386', 'armel', 'aarch64']
+String[] architectures = ['amd64', 'armel', 'aarch64']
 String[] distributions = ['debian:stretch', 'debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:hirsute', 'ubuntu:impish']
 
 String vendor = 'vitexsoftware'
@@ -18,11 +18,9 @@ architectures.each {
         
         node( architecture ) {
             ansiColor('xterm') {
-                stage "\u001B[31m' + buildArgs + '\u001B[0m"
-            }
-
-            stage('Build ' + architecture + '/' + distribution + ' image') {
-                def customImage = docker.build(vendor + '/' + distribution, buildArgs)
+                stage(architecture + '/' + distribution) {
+                    def customImage = docker.build(vendor + '/' + distribution, buildArgs)
+                }
             }
 
         }

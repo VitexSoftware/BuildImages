@@ -16,14 +16,24 @@ architectures.each {
         buildArgs = ' --platform linux/' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
         node( architecture ) {
             ansiColor('xterm') {
-                stage('GIT') {
+                stage('GIT '  + architecture + '/' + distribution) {
                     checkout scm
                 }
-                stage(architecture + '/' + distribution) {
+                stage('Build ' + architecture + '/' + distribution) {
                     def buildImage = docker.build(vendor + '/' + distribution, buildArgs)
                 }
-            }
+                stage('Test ' + architecture + '/' + distribution){
+                    buildImage.inside {
+                        sh 'sudo apt install -y linuxlogo'
+                        sh 'linuxlogo'
+                    }
+                }
+                stage('Docker push ' + architecture + '/' + distribution ){
+                    docker.withRegistry('https://registry.hub.docker.com', 'git') {
+                        buildImage.push(vendor + '/' + distribution)
+                    }
+                }
 
+            }
         }
     }
-}

@@ -14,9 +14,18 @@ architectures.each {
     distributions.each {
         distribution = it
         dockerfile =  distribution + '/Dockerfile'
-        buildArgs = ' --platform ' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
-        echo buildArgs
-        def customImage = docker.build(vendor + '/' + distribution, buildArgs)
+        buildArgs = ' --platform linux/' + architecture + ' -t ' + vendor + '/' + distribution + ' -f ' + dockerfile + ' ' + distribution
+        
+        node( architecture ) {
+            ansiColor('xterm') {
+                stage "\u001B[31m' + buildArgs + '\u001B[0m"
+            }
+
+            stage('Build ' + architecture + '/' + distribution + ' image') {
+                def customImage = docker.build(vendor + '/' + distribution, buildArgs)
+            }
+
+        }
     }
 }
 

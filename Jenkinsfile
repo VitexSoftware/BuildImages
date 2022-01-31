@@ -17,7 +17,7 @@ architectures.each {
         node( architecture ) {
             ansiColor('xterm') {
                 stage('GIT') {
-                    git url: env.GIT_URL
+                    git url: 'https://github.com/VitexSoftware/BuildImages.git'
                 }
                 stage(architecture + '/' + distribution) {
                     def buildImage = docker.build(vendor + '/' + distribution, buildArgs)

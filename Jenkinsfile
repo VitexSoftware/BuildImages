@@ -8,7 +8,6 @@ String architecture = ''
 String dockerfile = ''
 String buildArgs = ''
 
-
 architectures.each {
     architecture = it
     distributions.each {
@@ -33,7 +32,7 @@ architectures.each {
                     }
                 }
                 stage('Docker push ' + architecture + '/' + distribution ) {
-                    docker.withRegistry('https://registry.hub.docker.com', 'git') {
+                    docker.withRegistry('https://registry.hub.docker.com', 'vitex_dockerhub') {
                         buildImage.push(vendor + '/' + distribution)
                     }
                 }

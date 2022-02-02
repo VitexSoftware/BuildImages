@@ -14,7 +14,7 @@ architectures.each {
         distribution = it
         dockerfile =  distribution + '/Dockerfile'
         buildArgs = ' --platform linux/' + architecture +
-        ' -t ' + vendor + '/' + distribution +
+/*        ' -t ' + vendor + '/' + distribution + */
         ' -f ' + dockerfile + ' ' + distribution
 
         def buildImage = ''

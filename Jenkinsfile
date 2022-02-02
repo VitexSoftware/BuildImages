@@ -27,6 +27,7 @@ architectures.each {
                 }
                 stage('Test ' + architecture + '/' + distribution) {
                     buildImage.inside {
+                        sh 'whoami'
                         sh 'sudo apt install -y linuxlogo'
                         sh 'linuxlogo'
                     }

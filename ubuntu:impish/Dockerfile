@@ -10,7 +10,7 @@ RUN apt-get -y install locales locales-all && rm -rf /var/lib/apt/lists/* && loc
 RUN apt-get update && apt-get install -y pbuilder sudo curl wget php composer lsb-release jq moreutils aptitude gdebi-core apt-utils debhelper po-debconf
 
 RUN \
-    groupadd -g 114 jenkins && useradd -u 107 -g jenkins -G sudo -m -s /bin/bash jenkins && \
+    groupadd -g 222 jenkins && useradd -u  222  -g jenkins -G sudo -m -s /bin/bash jenkins && \
     sed -i /etc/sudoers -re 's/^%sudo.*/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' && \
     sed -i /etc/sudoers -re 's/^root.*/root ALL=(ALL:ALL) NOPASSWD: ALL/g' && \
     sed -i /etc/sudoers -re 's/^#includedir.*/## **Removed the include directive** ##"/g' && \

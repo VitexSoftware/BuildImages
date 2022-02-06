@@ -1,0 +1,34 @@
+---
+
+- name: Turn swap off
+  ansible.builtin.command: 'swapoff -a'
+
+
+- name: Remove all swap entries from fstab
+  ansible.posix.mount:
+        path: none
+        fstype: swap
+        state: absent
+
+- name: "Format the /dev/mapper/{{ ansible_hostname }}--vg-swap file"
+  ansible.builtin.command: "mkswap -f -L SWAP /dev/mapper/{{ ansible_hostname }}--vg-swap"
+    
+- name: "Add /dev/mapper/{{ ansible_hostname }}--vg-swap entry to fstab"
+  ansible.posix.mount:
+        path: none
+        src: "/dev/mapper/{{ ansible_hostname }}--vg-swap"
+        fstype: swap
+        opts: sw
+        passno: '0'
+        dump: '0'
+        state: present
+    
+    #  -f, --fixpgsz   reinitialize the swap space if necessary
+- name: Turn swap on
+  ansible.builtin.command: swapon -f /dev/mapper/{{ ansible_hostname }}--vg-swap
+    
+- name: "Set swappiness: {{ swappiness }}"
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "{{ swappiness }}"
+    state: present

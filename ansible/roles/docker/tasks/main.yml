@@ -1,0 +1,63 @@
+---
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  ansible.builtin.apt_key:
+    url: 'https://download.docker.com/linux/debian/gpg'
+    state: present
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: 'deb [arch=armhf] https://download.docker.com/linux/raspbian {{ ansible_distribution_release }} stable'
+    state: present
+    update_cache: true
+
+- name: Be sure we have btrfs progs
+  package:
+    name: btrfs-progs
+    state: latest
+
+- name: format the new /var/lib/docker btrfs filesystem
+  filesystem:
+    fstype: btrfs
+    dev: '/dev/mapper/{{ ansible_hostname }}--vg-docker'
+    force: false
+    state: present
+
+- name: Create docker dir
+  file:
+    path: '/var/lib/docker'
+    state: directory
+
+- name: "Add /dev/mapper/{{ ansible_hostname }}--vg-docker entry to fstab"
+  ansible.posix.mount:
+        path: '/var/lib/docker'
+        src: "/dev/mapper/{{ ansible_hostname }}--vg-docker"
+        fstype: btrfs
+        opts: auto
+        passno: '0'
+        dump: '0'
+        state: mounted
+
+- name: Instal docker package
+  package:
+    name: [' docker-ce', 'docker-ce-cli', 'containerd.io']
+    state: latest
+
+- name: Add Jenkins to Docker group
+  user:
+    name: 'jenkins'
+    groups:
+      - docker
+      - sudo
+
+- name: Copy initial config
+  copy:
+    src: 'daemon.json'
+    dest: '/etc/docker/'
+    mode: 'u+r'
+
+- name: Make sure a docker service unit is running
+  ansible.builtin.systemd:
+    state: restarted
+    name: docker
+

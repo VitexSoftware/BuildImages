@@ -1,0 +1,56 @@
+---
+- name: format the new /var ext4 filesystem
+  filesystem:
+    fstype: ext4
+    dev: '/dev/mapper/{{ ansible_hostname }}--vg-var'
+    state: present        
+
+- name: Temporary dirs
+  file:
+    path: '{{ item }}'
+    mode: 'a+w'
+    state: directory
+  with_items: ['/mnt/oldvar','/mnt/newvar']
+
+- name: Stop swap file
+  command: 'swapoff /var/swap'
+  ignore_errors: true
+
+- name: Be sure the /mnt/oldvar unmounted
+  command: 'umount /mnt/oldvar'
+  ignore_errors: true
+
+- name: Be sure the /mnt/newvar unmounted
+  command: 'umount /mnt/newvar'
+  ignore_errors: true
+
+- name: Mount root to /mnt/oldvar
+  command: 'mount /dev/mmcblk0p2 /mnt/oldvar'
+
+- name: Mount new var to /mnt/newvar
+  command: 'mount /dev/mapper/{{ ansible_hostname }}--vg-var /mnt/newvar'
+
+- name: Copy var files
+  command: 'rsync -aAX -x --exclude={/lost+found,/run} /mnt/oldvar/var /mnt/newvar'
+  ignore_errors: true
+
+- name: "Add /dev/mapper/{{ ansible_hostname }}--vg-var entry to fstab"
+  ansible.posix.mount:
+        path: '/var/'
+        src: "/dev/mapper/{{ ansible_hostname }}--vg-var"
+        fstype: ext4
+        opts: auto
+        passno: '0'
+        dump: '0'
+        state: present
+
+- name: Reboot a slow machine that might have lots of updates to apply
+  reboot:
+    reboot_timeout: 3600
+
+- name: Temporary dirs cleanup
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items: ['/mnt/oldvar','/mnt/newvar']
+

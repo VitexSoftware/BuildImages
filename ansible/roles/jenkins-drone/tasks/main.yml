@@ -1,0 +1,79 @@
+---
+- name: remove packages
+  apt:
+    name: ['lightdm','cups-daemon','pipewire','xorg','xserver-xorg-core', 'exim4', 'lightdm']
+    state: absent
+    update_cache: yes
+
+- name: Remove Uneeded users
+  user:
+    name: '{{ item }}'
+    state: absent
+  with_items: ['Debian-exim', 'lightdm']
+
+- name: Remove uneeded groups
+  group:
+    name: '{{ item }}'
+    state: absent
+  with_items: ['Debian-exim', 'lightdm']
+
+- name: Create a Jenkins group
+  group:
+    name: 'jenkins'
+    gid: 222
+    state: present
+
+- name: Create a Jenkins user
+  user:
+    name: 'jenkins'
+    uid: 222
+    # groups:
+    #   - docker
+    #   - sudo
+    state: present
+    shell: /bin/bash
+    system: no
+    createhome: true
+    home: /var/lib/jenkins
+
+- name: make direcotry
+  file:
+    path: "/var/lib/jenkins/.ssh"
+    state: directory
+
+- name: create empty file
+  file:
+    path: "/var/lib/jenkins/.ssh/authorized_keys"
+    state: touch
+
+- name: put pubkey
+  lineinfile:
+    path: "/var/lib/jenkins/.ssh/authorized_keys"
+    line: "{{ lookup('file', 'jenkins.pub') }}"
+
+- name: install basic packages
+  apt:
+    name: ['default-jdk-headless','build-essential','pbuilder','devscripts', 'lvm2', 'rsync', 'postfix','rsyslog']
+    state: present
+
+#- name: Prepare LVM
+#  include: 'lvm.yml'
+
+- name: Graylog config directory
+  file:
+    dest:  /etc/rsyslog.d
+    state: directory
+
+- name: Graylog config file
+  lineinfile:
+    dest: /etc/rsyslog.d/graylog.conf
+    line: '*.* @@10.11.0.249:10514'
+    create: true
+  notify:
+    - Restart rsyslog
+
+- name: Groups For User jenkins
+  user:
+    name: 'jenkins'
+    groups:
+      - sudo

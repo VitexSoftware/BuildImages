@@ -1,0 +1,46 @@
+---
+- name: Prepare LVM 
+  parted:
+    device: /dev/sda
+    number: 1
+    flags: [ lvm ]
+    state: present
+
+- name: Create volume group {{ ansible_hostname }}-vg
+  lvg:
+    vg: '{{ ansible_hostname }}-vg'
+    pvs: /dev/sda1
+    pesize: '16'
+    state: present
+  ignore_errors: true  
+
+- name: Create DOCKER logical volume on
+  lvol:
+      vg: '{{ ansible_hostname }}-vg'
+      lv:  'docker'
+      size: '50g'
+      force: true
+      state: present
+
+- name: Create SWAP logical volume on
+  lvol:
+      vg: '{{ ansible_hostname }}-vg'
+      lv:  swap
+      size: 8g
+      force: yes
+      state: present
+
+- name: Setup SWAP
+  include: 'swap.yml'
+
+- name: Create VAR logical volume on
+  lvol:
+      vg: '{{ ansible_hostname }}-vg'
+      lv:  var
+      size: 50g
+      force: yes
+      state: present
+
+- name: Setup VAR
+  include: 'var.yml'
+

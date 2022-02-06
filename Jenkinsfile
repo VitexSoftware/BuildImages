@@ -34,7 +34,7 @@ architectures.each {
                 }
                 stage('Docker push ' + architecture + '/' + distribution ) {
                     docker.withRegistry('https://registry.hub.docker.com', 'vitex_dockerhub') {
-                        buildImage.push("${env.BUILD_NUMBER}")
+                        buildImage.push(  distribution + "-${env.BUILD_NUMBER}-SNAPSHOT")
                     }
                 }
             }

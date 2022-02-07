@@ -16,7 +16,7 @@ RUN \
     sed -i /etc/sudoers -re 's/^#includedir.*/## **Removed the include directive** ##"/g' && \
     echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     echo "Customized the sudoers file for passwordless access to the jenkins user!" && \
-    echo "jenkins user:";  su - jenkins -c id
+    echo "jenkins user:";  su - jenkins -c id 
 
 RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
 
@@ -27,3 +27,4 @@ RUN apt-get update && apt-get install -y php8.1-xml
 
 RUN echo "deb [signed-by=/etc/apt/trusted.gpg.d/vitexsoftware.gpg] http://repo.vitexsoftware.com $(lsb_release -sc) main backports" | tee /etc/apt/sources.list.d/vitexsoftware.com.list;  apt update
 
+RUN mkdir -p /var/lib/jenkins/workspace/ ; chown jenkins:jenkins /var/lib/jenkins/ -Rv

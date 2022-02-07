@@ -7,6 +7,9 @@ String distribution = ''
 String architecture = ''
 String dockerfile = ''
 String buildArgs = ''
+String distroFamily = ''
+String distroCodename = ''
+
 
 architectures.each {
     architecture = it
@@ -16,6 +19,11 @@ architectures.each {
         buildArgs = ' --platform linux/' + architecture +
 /*        ' -t ' + vendor + '/' + distribution + */
         ' -f ' + dockerfile + ' ' + distribution
+
+        def dist = distribution.split(':')
+        distroFamily = dist[0]
+        distroCodename = dist[1]
+
 
         def buildImage = ''
 
@@ -32,10 +40,9 @@ architectures.each {
                         sh 'linuxlogo'
                     }
                 }
-                stage('Docker push ' + architecture + '/' + distribution ) {
+                stage('Docker push ' + architecture + '/' + distroCodename + "-${env.BUILD_NUMBER}-SNAPSHOT" ) {
                     docker.withRegistry('https://registry.hub.docker.com', 'vitex_dockerhub') {
-			echo distribution + "-${env.BUILD_NUMBER}-SNAPSHOT"
-                        buildImage.push(  distribution + "-${env.BUILD_NUMBER}-SNAPSHOT")
+                        buildImage.push(  distroCodename + "-${env.BUILD_NUMBER}-SNAPSHOT")
                     }
                 }
             }

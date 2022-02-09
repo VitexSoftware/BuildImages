@@ -8,7 +8,6 @@ RUN apt-get update ; apt-get install -y wget ; echo "deb http://repo.vitexsoftwa
 RUN apt-get -y install locales ; echo "LC_ALL=en_US.UTF-8" >> /etc/environment ; echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen ; echo "LANG=en_US.UTF-8" > /etc/locale.conf ; locale-gen en_US.UTF-8
 RUN apt-get update && apt-get install -y pbuilder sudo curl wget php composer lsb-release jq moreutils aptitude gdebi-core apt-utils debhelper po-debconf php-xml php-dom php-intl
 
-
 RUN \
     groupadd -g 222 jenkins && useradd -u  222  -g jenkins -G sudo -m -s /bin/bash jenkins && \
     sed -i /etc/sudoers -re 's/^%sudo.*/%sudo ALL=(ALL:ALL) NOPASSWD: ALL/g' && \

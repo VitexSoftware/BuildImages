@@ -24,6 +24,28 @@ impish:
 update:
 	ansible-playbook 
 
+buildx-buster:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:buster debian:buster
+
+buildx-bullseye:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:bullseye debian:bullseye
+
+buildx-bookworm:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:bookworm debian:bookworm
+
+buildx-focal:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:focal ubuntu:focal
+
+buildx-hirsute:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:hirsute ubuntu:hirsute
+
+buildx-impish:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:impish debian:impish
+
+buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish
+
+
+
 clean:
 	docker system prune -a -f
 	docker rmi $$(docker images 'vitexsoftware/debian:buster' -a -q)

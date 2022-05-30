@@ -1,4 +1,4 @@
-all: buster bullseye bookworm focal hirsute impish
+all: buster bullseye bookworm focal hirsute impish jammy
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
@@ -16,10 +16,13 @@ focal:
 	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:focal -f ubuntu:focal/Dockerfile ubuntu:focal/
 
 hirsute:
-	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:hirsute -f ubuntu:hirsute/Dockerfile ubuntu:hirsute/
+	docker build -t vitexsoftware/ubuntu:hirsute -f ubuntu:hirsute/Dockerfile ubuntu:hirsute/
 
 impish:
-	docker build -t vitexsoftware/ubuntu:rolling -t vitexsoftware/ubuntu:impish -f ubuntu:impish/Dockerfile ubuntu:impish/
+	docker build -t vitexsoftware/ubuntu:impish -f ubuntu:impish/Dockerfile ubuntu:impish/
+
+jammy:
+	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:jammy -f ubuntu:jammy/Dockerfile ubuntu:jammy/
 
 update:
 	ansible-playbook 
@@ -42,7 +45,10 @@ buildx-hirsute:
 buildx-impish:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:impish debian:impish
 
-buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish
+buildx-jammy:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy debian:jammy
+
+buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy
 
 
 
@@ -54,6 +60,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:focal' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:hirsute' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/ubuntu:jammy' -a -q)
 
 reset: clean all
 
@@ -64,6 +71,7 @@ push:
 	docker push vitexsoftware/ubuntu:focal
 	docker push vitexsoftware/ubuntu:hirsute
 	docker push vitexsoftware/ubuntu:impish
+	docker push vitexsoftware/ubuntu:jammy
 
 publish: all push
 

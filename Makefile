@@ -43,10 +43,10 @@ buildx-hirsute:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:hirsute ubuntu:hirsute
 
 buildx-impish:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:impish debian:impish
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:impish ubuntu:impish
 
 buildx-jammy:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy debian:jammy
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy ubuntu:jammy
 
 buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy
 

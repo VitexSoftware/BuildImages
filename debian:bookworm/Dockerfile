@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV LANG en_US.utf-8
 ENV LC_ALL en_US.utf-8
 
-RUN apt-get update ; apt-get install -y wget ; echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.cz bookworm main" | tee /etc/apt/sources.list.d/vitexsoftware.list ; wget -O /usr/share/keyrings/vitexsoftware.gpg http://repo.vitexsoftware.cz/keyring.gpg 
+RUN apt-get update ; apt-get install -y wget ; echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com bookworm main" | tee /etc/apt/sources.list.d/vitexsoftware.list ; wget -O /usr/share/keyrings/vitexsoftware.gpg http://repo.vitexsoftware.com/keyring.gpg 
 RUN apt-get -y install locales ; echo "LC_ALL=en_US.UTF-8" >> /etc/environment ; echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen ; echo "LANG=en_US.UTF-8" > /etc/locale.conf ; locale-gen en_US.UTF-8
 RUN apt-get update && apt-get install -y pbuilder sudo curl wget php composer lsb-release jq moreutils aptitude gdebi-core apt-utils debhelper po-debconf php-xml php-dom php-intl
 
@@ -23,8 +23,6 @@ RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php
 RUN sed -i -e 's/11/12/g' /usr/lib/os-release ; sed -i -e 's/bullseye/bookworm/g' /usr/lib/os-release ; 
 RUN apt-get update && apt-get install -y php8.1-xml 
 #TODO: Remove when stabilized
-
-RUN echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com $(lsb_release -sc) main backports" | tee /etc/apt/sources.list.d/vitexsoftware.com.list;  apt update
 
 RUN mkdir -p /var/lib/jenkins/workspace/ ; chown jenkins:jenkins /var/lib/jenkins/ -Rv
 

@@ -23,3 +23,4 @@ RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php
 ADD usrsharelocale.tar.gz /
 
 RUN mkdir -p /var/lib/jenkins/workspace/ ; chown jenkins:jenkins /var/lib/jenkins/ -Rv
+RUN apt -y install php-mbstring && phpenmod mbstring

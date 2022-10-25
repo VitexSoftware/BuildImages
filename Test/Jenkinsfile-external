@@ -1,13 +1,15 @@
 #!groovy
 
 
-String[] architectures = []
-String[] distributions = ['debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy']
+String repoUrl = 'https://github.com/raspberrypi/rpi-imager.git'
+String repoBranch = 'qml' // scm.userRemoteConfigs[0].branch
 
-String vendor = 'vitexsoftware'
+String[] architectures = ['amd64', 'aarch64', 'armhf']
+String[] distributions = ['debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy'] // 'debian:buster'
+
+String imageVendor = 'vitexsoftware'
 String distribution = ''
 String architecture = ''
-//String distroFamily = ''
 String distroCodename = ''
 String ver = ''
 
@@ -17,14 +19,13 @@ properties([
 node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
-            checkout scm
-            def control = readFile( file:  env.WORKSPACE + "/debian/control")
-            def lines = control.readLines() 
-            for(line in lines) {
+            checkout([$class: 'GitSCM', branches: [[name: '*/' + repoBranch ]], extensions: [], userRemoteConfigs: [[url: repoUrl]]])
+            def control = readFile(file:  env.WORKSPACE + '/debian/control')
+            def lines = control.readLines()
+            for (line in lines) {
                 if (line.trim()) {
                     def (key,value) = line.split(': ').collect { it.trim() }
-                    if ( key == 'Architecture' ) {
-
+                    if (key == 'Architecture') {
                         if (value == 'any') {
                             architectures = ['amd64', 'armhf', 'aarch64']
                         } else {
@@ -33,44 +34,43 @@ node() {
                     }
                 }
             }
-
         }
     }
 }
 
-
-
 architectures.each {
     architecture = it
 
-    println "Arch: " + architecture
+    println 'Arch: ' + architecture
 
     distributions.each {
         distribution = it
 
-        println  "Dist:" + distribution
+        println  'Dist:' + distribution
 
-        def dist = distribution.split(':')
+        def String dist = distribution.split(':')
         //      distroFamily = dist[0]
         distroCodename = dist[1]
 
-        def buildImage = ''
+        def String buildImage = ''
 
-        node( architecture ) {
+        node(architecture) {
             ansiColor('xterm') {
                 stage('Checkout ' + architecture + ' ' + distribution) {
-                    buildImage = docker.image(vendor + '/' + distribution)
+                    buildImage = docker.image(imageVendor + '/' + distribution)
+                    sh 'cd ' + env.WORKSPACE + '; ls -la; pwd'
                     sh 'git checkout debian/changelog'
-                    def VERSION = sh (
+                    def String pkgVer = sh(
                         script: 'dpkg-parsechangelog --show-field Version',
                         returnStdout: true
                     ).trim()
-                    ver = VERSION + '~' + distroCodename + '~' + env.BUILD_NUMBER
+                    ver = pkgVer + '~' + distroCodename + '~' + env.BUILD_NUMBER
                 }
                 stage('Build ' + architecture + ' ' + distribution) {
                     buildImage.inside {
                         sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
+                        //                        sh 'sudo apt install -y libgnutls28-dev'
                         sh 'sudo chown jenkins:jenkins ..'
                         sh 'debuild-pbuilder  -i -us -uc -b'
                         sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
@@ -97,4 +97,3 @@ architectures.each {
         }
     }
 }
-

@@ -1,6 +1,5 @@
 #!groovy
 
-
 String[] architectures = []
 String[] distributions = ['debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy']
 
@@ -18,13 +17,12 @@ node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
             checkout scm
-            def control = readFile( file:  env.WORKSPACE + "/debian/control")
-            def lines = control.readLines() 
-            for(line in lines) {
+            def control = readFile(file:  env.WORKSPACE + '/debian/control')
+            def lines = control.readLines()
+            for (line in lines) {
                 if (line.trim()) {
                     def (key,value) = line.split(': ').collect { it.trim() }
-                    if ( key == 'Architecture' ) {
-
+                    if (key == 'Architecture') {
                         if (value == 'any') {
                             architectures = ['amd64', 'armhf', 'aarch64']
                         } else {
@@ -33,22 +31,19 @@ node() {
                     }
                 }
             }
-
         }
     }
 }
 
-
-
 architectures.each {
     architecture = it
 
-    println "Arch: " + architecture
+    println 'Arch: ' + architecture
 
     distributions.each {
         distribution = it
 
-        println  "Dist:" + distribution
+        println  'Dist:' + distribution
 
         def dist = distribution.split(':')
         //      distroFamily = dist[0]
@@ -56,12 +51,12 @@ architectures.each {
 
         def buildImage = ''
 
-        node( architecture ) {
+        node(architecture) {
             ansiColor('xterm') {
                 stage('Checkout ' + architecture + ' ' + distribution) {
                     buildImage = docker.image(vendor + '/' + distribution)
                     sh 'git checkout debian/changelog'
-                    def VERSION = sh (
+                    def VERSION = sh(
                         script: 'dpkg-parsechangelog --show-field Version',
                         returnStdout: true
                     ).trim()
@@ -84,6 +79,14 @@ architectures.each {
                         sh 'echo "deb [trusted=yes] file://///$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'echo "INSTALATION"'
+
+                        File insinc = new File('./InstallDebs.groovy')
+                        if (file.exists()) {
+                            evaluate(insinc)
+                            def installer = new InstallDebs()
+                            installer.aptInstall('debian/files')
+                        }
+
                         sh 'IFS="\n\b"; for package in  `ls $WORKSPACE/dist/debian/ | grep .deb | grep -v dbgsym | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug  + ' apt-get -y install $package ; echo "test now";  done;'
                         stash includes: 'dist/**', name: 'dist-' + distroCodename
                     }
@@ -97,4 +100,3 @@ architectures.each {
         }
     }
 }
-

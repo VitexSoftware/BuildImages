@@ -24,6 +24,9 @@ impish:
 jammy:
 	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:jammy -f ubuntu:jammy/Dockerfile ubuntu:jammy/
 
+kinetic:
+	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:kinetic -f ubuntu:kinetic/Dockerfile ubuntu:kinetic/
+
 update:
 	ansible-playbook 
 
@@ -48,8 +51,10 @@ buildx-impish:
 buildx-jammy:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy ubuntu:jammy
 
-buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy
+buildx-kinetic:
+	docker buildx build --push --platform linux/amd64,linux/amd64/v2,linux/amd64/v3 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
 
+buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic
 
 
 clean:
@@ -61,6 +66,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:hirsute' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:jammy' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/ubuntu:kinetic' -a -q)
 
 reset: clean all
 
@@ -72,6 +78,7 @@ push:
 	docker push vitexsoftware/ubuntu:hirsute
 	docker push vitexsoftware/ubuntu:impish
 	docker push vitexsoftware/ubuntu:jammy
+	docker push vitexsoftware/ubuntu:kinetic
 
 publish: all push
 

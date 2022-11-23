@@ -1,4 +1,4 @@
-all: buster bullseye bookworm focal hirsute impish jammy
+all: buster bullseye bookworm focal hirsute impish jammy kinetic
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
@@ -11,6 +11,9 @@ bullseye:
 
 bookworm:
 	docker build -t vitexsoftware/debian:testing -t vitexsoftware/debian:bookworm -f debian:bookworm/Dockerfile debian:bookworm/
+
+bionic:
+	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:bionic -f ubuntu:bionic/Dockerfile ubuntu:bionic/
 
 focal:
 	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:focal -f ubuntu:focal/Dockerfile ubuntu:focal/
@@ -52,7 +55,7 @@ buildx-jammy:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy ubuntu:jammy
 
 buildx-kinetic:
-	docker buildx build --push --platform linux/amd64,linux/amd64/v2,linux/amd64/v3 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
+	docker buildx build --push --platform linux/arm/v7,linux/amd64/v3,linux/arm64/v8 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
 
 buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic
 
@@ -67,6 +70,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:jammy' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:kinetic' -a -q)
+	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 reset: clean all
 

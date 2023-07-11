@@ -19,10 +19,5 @@ RUN \
 
 RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
 
-#Dirty Hacks:
-RUN sed -i -e 's/11/12/g' /usr/lib/os-release ; sed -i -e 's/bullseye/bookworm/g' /usr/lib/os-release ; 
-RUN apt-get update && apt-get install -y php8.1-xml 
-#TODO: Remove when stabilized
-
 RUN mkdir -p /var/lib/jenkins/workspace/ ; chown jenkins:jenkins /var/lib/jenkins/ -Rv
 

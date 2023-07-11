@@ -14,6 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Multiple platforms feature is currently not supported for docker driver.
+      run: docker buildx create --use
     - name: Build the Docker image
       run: make buildx
     - name: Docker Hub Description

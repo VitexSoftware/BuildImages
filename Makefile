@@ -1,4 +1,4 @@
-all: buster bullseye bookworm focal hirsute impish jammy kinetic
+all: bullseye bookworm trixie focal hirsute impish jammy kinetic
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
@@ -71,6 +71,8 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/debian:buster' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:bullseye' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:bookworm' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/debian:trixie' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/ubuntu:bionic' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:focal' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:hirsute' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
@@ -84,6 +86,7 @@ push:
 	docker push vitexsoftware/debian:buster
 	docker push vitexsoftware/debian:bullseye
 	docker push vitexsoftware/debian:bookworm
+	docker push vitexsoftware/debian:trixie
 	docker push vitexsoftware/ubuntu:focal
 	docker push vitexsoftware/ubuntu:hirsute
 	docker push vitexsoftware/ubuntu:impish

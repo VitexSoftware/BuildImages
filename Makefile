@@ -30,8 +30,11 @@ jammy:
 kinetic:
 	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:kinetic -f ubuntu:kinetic/Dockerfile ubuntu:kinetic/
 
+trixie:
+	docker build -t vitexsoftware/debian:unstable -t vitexsoftware/debian:trixie -f debian:trixie/Dockerfile debian:trixie/
+
 update:
-	ansible-playbook 
+	ansible-playbook
 
 buildx-buster:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:buster debian:buster
@@ -41,6 +44,9 @@ buildx-bullseye:
 
 buildx-bookworm:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:bookworm debian:bookworm
+
+buildx-trixie:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:trixie debian:trixie
 
 buildx-focal:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:focal ubuntu:focal

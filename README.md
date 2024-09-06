@@ -2,7 +2,13 @@
 
 ![Title image](build-images.svg?raw=truue)
 
-Source of Docker images used for Debian package building
+To add badges for GitHub Actions, you can use the following markdown:
+
+```markdown
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/VitexSoftware/BuildImages/docker-image.yml?branch=main)
+```
+
+Source of Docker images used for Debian/Ubuntu package building
 
 simply run
 

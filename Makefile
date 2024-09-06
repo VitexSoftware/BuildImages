@@ -63,8 +63,7 @@ buildx-jammy:
 buildx-kinetic:
 	docker buildx build --push --platform linux/arm/v7,linux/amd64/v3,linux/arm64/v8 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
 
-buildx: buildx-buster buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic
-
+buildx: buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic
 
 clean:
 	docker system prune -a -f

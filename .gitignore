@@ -1,1 +1,8 @@
 .vagrant
+Test/debian/files
+Test/debian/debhelper-build-stamp
+Test/debian/ldd2debs.debhelper.log
+Test/debian/ldd2debs.substvars
+Test/debian/.debhelper/
+Test/debian/ldd2debs/
+Test/debian/files

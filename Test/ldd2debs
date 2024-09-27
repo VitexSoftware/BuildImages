@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
   case $1 in
     "--help" | "-h")
 	echo "show packages with dependencies for given binary. Example:"
@@ -9,7 +8,7 @@
 	;;
     "--version" | "-v" )
 	echo "ldd2debs v0.1"
-	break
+	exit 0
 	;;
     *)
 	ldd $1 | awk '/=>/{print $(NF-1)}'  |  while read n; do apt-file search $n; done |   awk '{print $1}' | sed 's/://' | sort | uniq

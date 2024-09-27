@@ -1,6 +1,7 @@
 ldd2debs (0.1) UNRELEASED; urgency=low
 
-  * Initial release. Closes: #nnnn
-    <nnnn is the bug number of your ITP>
+  * Just Example
+  * Specify versions for essential package dependencies
+
 
  -- Vítězslav Dvořák <info@vitexsoftware.cz>  Mon, 22 Nov 2021 22:07:33 +0100

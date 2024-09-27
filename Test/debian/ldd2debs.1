@@ -1,62 +1,39 @@
-.\"                                      Hey, EMACS: -*- nroff -*-
-.\" (C) Copyright 2021 Vítězslav Dvořák <info@vitexsoftware.cz>,
-.\"
-.\" See http://www.debian.org/doc/manuals/maint-guide/dother.en.html#manpage1
-.\"
-.\" 1. Use this as the template for the manpage for <commandname> after
-.\"    renaming this file to <commandname>.1 (if it is for section 1).
-.\"
-.\" 2. List the path to this file in debian/<packagename>.manpages to
-.\"    install this manpage to the target binary package.
-.\"
-.\" First parameter, LDD2DEBS, should be all caps
-.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
-.\" other parameters are allowed: see man(7), man(1)
-.TH LDD2DEBS SECTION "22 Nov 2021"
-.\" Please adjust this date whenever revising the manpage.
-.\"
-.\" Some roff macros, for reference:
-.\" .nh        disable hyphenation
-.\" .hy        enable hyphenation
-.\" .ad l      left justify
-.\" .ad b      justify to both left and right margins
-.\" .nf        disable filling
-.\" .fi        enable filling
-.\" .br        insert line break
-.\" .sp <n>    insert n+1 empty lines
-.\" for manpage-specific macros, see man(7)
+.TH LDD2DEBS 1 "October 2023" "v0.1" "ldd2debs manual"
+
 .SH NAME
-ldd2debs \- so libs to deb files
+ldd2debs \- show packages with dependencies for a given binary
+
 .SH SYNOPSIS
 .B ldd2debs
-.RI [ options ] " files" ...
-.br
-.B bar
-.RI [ options ] " files" ...
+[\fIoptions\fR] \fIbinary\fR
+
 .SH DESCRIPTION
-This manual page documents briefly the
 .B ldd2debs
-command.
-.PP
-.\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invode bold face and italics,
-.\" respectively.
-\fBldd2debs\fP is a program that search for packages which contains .so files linked to given binary
+is a script that shows the packages with dependencies for a given binary.
+
 .SH OPTIONS
-These programs follow the usual GNU command line syntax, with long
-options starting with two dashes (`-').
-A summary of options is included below.
-For a complete description, see the Info files.
 .TP
-.B \-h, \-\-help
-Show summary of options.
+.B \-\-help, \-h
+Show help message and usage example.
 .TP
-.B \-v, \-\-version
-Show version of program.
+.B \-\-version, \-v
+Show the version of the script.
+
+.SH EXAMPLES
+To show the packages with dependencies for /bin/bash:
+.PP
+.B ldd2debs /bin/bash
+
+.SH AUTHOR
+Vítězslav Dvořák <info@vitexsoftware.cz>
+
+.SH LICENSE
+This script is licensed under the MIT License.
+
 .SH SEE ALSO
-.BR bar (1),
-.BR baz (1).
-.br
-The programs are documented fully by
-.IR "The Rise and Fall of a Fooish Bar" ,
-available via the Info system.
+.BR ldd (1),
+.BR apt-file (1),
+.BR awk (1),
+.BR sed (1),
+.BR sort (1),
+.BR uniq (1)

@@ -1,4 +1,4 @@
-all: bullseye bookworm trixie focal hirsute impish jammy kinetic
+all: bullseye bookworm trixie focal hirsute impish jammy kinetic noble
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
@@ -29,6 +29,9 @@ jammy:
 
 kinetic:
 	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:kinetic -f ubuntu:kinetic/Dockerfile ubuntu:kinetic/
+
+noble:
+	docker build -t vitexsoftware/ubuntu:noble -f ubuntu:noble/Dockerfile ubuntu:noble/
 
 trixie:
 	docker build -t vitexsoftware/debian:unstable -t vitexsoftware/debian:trixie -f debian:trixie/Dockerfile debian:trixie/
@@ -63,7 +66,10 @@ buildx-jammy:
 buildx-kinetic:
 	docker buildx build --push --platform linux/arm/v7,linux/amd64/v3,linux/arm64/v8 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
 
-buildx: buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic
+buildx-noble:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:noble ubuntu:noble
+
+buildx: buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic buildx-noble
 
 clean:
 	docker system prune -a -f
@@ -77,6 +83,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:jammy' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:kinetic' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/ubuntu:noble' -a -q)
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 reset: clean all
@@ -91,6 +98,6 @@ push:
 	docker push vitexsoftware/ubuntu:impish
 	docker push vitexsoftware/ubuntu:jammy
 	docker push vitexsoftware/ubuntu:kinetic
+	docker push vitexsoftware/ubuntu:noble
 
 publish: all push
-

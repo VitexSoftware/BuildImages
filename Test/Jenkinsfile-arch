@@ -1,15 +1,14 @@
 #!groovy
 
+// Part of https://github.com/VitexSoftware/BuildImages
 
-String repoUrl = 'https://github.com/raspberrypi/rpi-imager.git'
-String repoBranch = 'qml' // scm.userRemoteConfigs[0].branch
+String[] architectures = [] // 'amd64', 'aarch64', 'arm', 'i386'
+String[] distributions = ['debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy']
 
-String[] architectures = ['amd64', 'aarch64', 'armhf']
-String[] distributions = ['debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy'] // 'debian:buster'
-
-String imageVendor = 'vitexsoftware'
+String vendor = 'vitexsoftware'
 String distribution = ''
 String architecture = ''
+//String distroFamily = ''
 String distroCodename = ''
 String ver = ''
 
@@ -19,7 +18,7 @@ properties([
 node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
-            checkout([$class: 'GitSCM', branches: [[name: '*/' + repoBranch ]], extensions: [], userRemoteConfigs: [[url: repoUrl]]])
+            checkout scm
             def control = readFile(file:  env.WORKSPACE + '/debian/control')
             def lines = control.readLines()
             for (line in lines) {
@@ -48,29 +47,27 @@ architectures.each {
 
         println  'Dist:' + distribution
 
-        def String dist = distribution.split(':')
+        def dist = distribution.split(':')
         //      distroFamily = dist[0]
         distroCodename = dist[1]
 
-        def String buildImage = ''
+        def buildImage = ''
 
         node(architecture) {
             ansiColor('xterm') {
                 stage('Checkout ' + architecture + ' ' + distribution) {
-                    buildImage = docker.image(imageVendor + '/' + distribution)
-                    sh 'cd ' + env.WORKSPACE + '; ls -la; pwd'
+                    buildImage = docker.image(vendor + '/' + distribution)
                     sh 'git checkout debian/changelog'
-                    def String pkgVer = sh(
-                        script: 'dpkg-parsechangelog --show-field Version',
+                    def version = sh(
+                        script: 'dpkg-parsechangelog --show-field version',
                         returnStdout: true
                     ).trim()
-                    ver = pkgVer + '~' + distroCodename + '~' + env.BUILD_NUMBER
+                    ver = version + '.' + env.BUILD_NUMBER  + '~' + distroCodename
                 }
                 stage('Build ' + architecture + ' ' + distribution) {
                     buildImage.inside {
                         sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
-                        //                        sh 'sudo apt install -y libgnutls28-dev'
                         sh 'sudo chown jenkins:jenkins ..'
                         sh 'debuild-pbuilder  -i -us -uc -b'
                         sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
@@ -84,6 +81,14 @@ architectures.each {
                         sh 'echo "deb [trusted=yes] file://///$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'echo "INSTALATION"'
+
+//                        File insinc = new File('./InstallDebs.groovy')
+//                        if (file.exists()) {
+//                            evaluate(insinc)
+//                            def installer = new InstallDebs()
+//                            installer.aptInstall('debian/files')
+//                        }
+
                         sh 'IFS="\n\b"; for package in  `cat debian/files | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug  + ' apt-get -y install $WORKSPACE/dist/debian/$package ; done;'
                         stash includes: 'dist/**', name: 'dist-' + distroCodename
                     }

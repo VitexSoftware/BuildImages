@@ -1,16 +1,16 @@
-all: bullseye bookworm trixie focal hirsute impish jammy kinetic noble
+all: bullseye bookworm trixie focal jammy noble
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
 
 buster:
-	docker build -t vitexsoftware/debian:oldstable -t vitexsoftware/debian:buster -f debian:buster/Dockerfile debian:buster/
+	docker build -t vitexsoftware/debian:buster -f debian:buster/Dockerfile debian:buster/
 
 bullseye:
-	docker build -t vitexsoftware/debian:stable -t vitexsoftware/debian:bullseye   -f debian:bullseye/Dockerfile debian:bullseye/
+	docker build -t vitexsoftware/debian:bullseye   -f debian:bullseye/Dockerfile debian:bullseye/
 
 bookworm:
-	docker build -t vitexsoftware/debian:testing -t vitexsoftware/debian:bookworm -f debian:bookworm/Dockerfile debian:bookworm/
+	docker build -t vitexsoftware/debian:bookworm -f debian:bookworm/Dockerfile debian:bookworm/
 
 bionic:
 	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:bionic -f ubuntu:bionic/Dockerfile ubuntu:bionic/

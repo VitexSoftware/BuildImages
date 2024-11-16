@@ -1,6 +1,13 @@
 #!groovy
 
-String[] distributions = ['debian:bullseye', 'debian:bookworm', 'debian:trixie', 'ubuntu:focal', 'ubuntu:jammy', 'ubuntu:noble']
+String[] distributions = [
+    'debian:bullseye',
+    'debian:bookworm',
+    'debian:trixie',
+    'ubuntu:focal',
+    'ubuntu:jammy',
+    'ubuntu:noble'
+]
 
 String vendor = 'vitexsoftware'
 String ver = ''
@@ -8,7 +15,8 @@ String ver = ''
 properties([
     copyArtifactPermission('*')
 ])
-node() {
+
+node {
     ansiColor('xterm') {
         stage('SCM Checkout') {
             checkout scm
@@ -39,6 +47,10 @@ parallel distributions.collectEntries { distribution ->
                 }
                 stage('Build ' + distribution) {
                     buildImage.inside {
+                        sh 'mkdir -p /tmp/build'
+                        sh 'cp -r * /tmp/build'
+                        sh 'cd /tmp/build'
+                        sh 'dch -r ' + ver
                         sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'sudo chown jenkins:jenkins ..'

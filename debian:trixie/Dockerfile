@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.utf-8
 ENV LC_ALL=en_US.utf-8
 
-RUN apt-get update ; apt-get install -y wget ; echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com trixie main backports" | tee /etc/apt/sources.list.d/vitexsoftware.list ; wget -O /usr/share/keyrings/vitexsoftware.gpg http://repo.vitexsoftware.com/keyring.gpg
+RUN apt-get update ; apt-get install -y wget ; echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com noble main backports" | tee /etc/apt/sources.list.d/vitexsoftware.list ; wget -O /usr/share/keyrings/vitexsoftware.gpg http://repo.vitexsoftware.com/keyring.gpg ; echo "deb [signed-by=/etc/apt/trusted.gpg.d/vitexsoftware.gpg] https://repo.vitexsoftware.com borrow main" | tee /etc/apt/sources.list.d/vitexsoftware-borrow.list
 RUN apt-get -y install locales ; echo "LC_ALL=en_US.UTF-8" >> /etc/environment ; echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen ; echo "LANG=en_US.UTF-8" > /etc/locale.conf ; locale-gen en_US.UTF-8
 RUN apt-get update && apt-get install -y pbuilder sudo curl wget php composer lsb-release jq moreutils aptitude gdebi-core apt-utils debhelper po-debconf php-xml php-dom php-intl
 

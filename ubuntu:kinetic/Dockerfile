@@ -5,9 +5,7 @@ ENV LANG en_US.utf-8
 ENV LC_ALL en_US.utf-8
 ENV LANGUAGE=en
 
-RUN apt update
-COPY vitexsoftware.gpg /usr/share/keyrings/vitexsoftware.gpg 
-RUN echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com kinetic main backports" | tee /etc/apt/sources.list.d/vitexsoftware.list
+RUN apt-get update ; apt-get install -y wget ; echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com kinetic main backports" | tee /etc/apt/sources.list.d/vitexsoftware.list ; wget -O /usr/share/keyrings/vitexsoftware.gpg http://repo.vitexsoftware.com/keyring.gpg ; echo "deb [signed-by=/etc/apt/trusted.gpg.d/vitexsoftware.gpg] https://repo.vitexsoftware.com borrow main" | tee /etc/apt/sources.list.d/vitexsoftware-borrow.list
 RUN apt-get -y install locales locales-all pbuilder sudo curl wget php composer lsb-release jq moreutils aptitude gdebi-core apt-utils debhelper po-debconf php-mbstring
 #RUN rm -rf /var/lib/apt/lists/* 
 #RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 && echo "LC_ALL=en_US.UTF-8" >> /etc/environment 

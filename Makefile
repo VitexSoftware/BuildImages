@@ -69,7 +69,7 @@ buildx-kinetic:
 buildx-noble:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:noble ubuntu:noble
 
-buildx: buildx-bullseye buildx-bookworm buildx-focal buildx-hirsute buildx-impish buildx-jammy buildx-kinetic buildx-noble
+buildx: buildx-bullseye buildx-bookworm buildx-trixie buildx-focal buildx-jammy buildx-noble
 
 clean:
 	docker system prune -a -f

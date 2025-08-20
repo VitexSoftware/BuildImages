@@ -3,7 +3,7 @@
 // Part of https://github.com/VitexSoftware/BuildImages
 
 String[] architectures = [] // 'amd64', 'aarch64', 'arm', 'i386'
-String[] distributions = ['debian:buster', 'debian:bullseye', 'debian:bookworm', 'ubuntu:focal', 'ubuntu:jammy']
+String[] distributions = ['debian:buster', 'debian:bullseye', 'debian:bookworm', 'debian:forky', 'ubuntu:focal', 'ubuntu:jammy']
 
 String vendor = 'vitexsoftware'
 String distribution = ''

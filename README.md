@@ -58,6 +58,13 @@ Bullseye
     docker pull vitexsoftware/debian:testing
 ```
 
+Forky
+-----
+
+```shell
+    docker pull vitexsoftware/debian:forky
+```
+
 * [Ubuntu](https://hub.docker.com/r/vitexsoftware/ubuntu/tags?page=1&ordering=last_updated)
 
 ```shell

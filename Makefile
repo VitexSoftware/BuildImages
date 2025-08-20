@@ -1,4 +1,4 @@
-all: bullseye bookworm trixie focal jammy noble
+all: bullseye bookworm trixie forky focal jammy noble
 
 stretch:
 	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
@@ -11,6 +11,9 @@ bullseye:
 
 bookworm:
 	docker build -t vitexsoftware/debian:bookworm -f debian:bookworm/Dockerfile debian:bookworm/
+
+forky:
+	docker build -t vitexsoftware/debian:forky -f debian:forky/Dockerfile debian:forky/
 
 bionic:
 	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:bionic -f ubuntu:bionic/Dockerfile ubuntu:bionic/
@@ -51,6 +54,9 @@ buildx-bookworm:
 buildx-trixie:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:trixie debian:trixie
 
+buildx-forky:
+	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:forky debian:forky
+
 buildx-focal:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:focal ubuntu:focal
 
@@ -69,7 +75,7 @@ buildx-kinetic:
 buildx-noble:
 	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:noble ubuntu:noble
 
-buildx: buildx-bullseye buildx-bookworm buildx-trixie buildx-focal buildx-jammy buildx-noble
+buildx: buildx-bullseye buildx-bookworm buildx-trixie buildx-forky buildx-focal buildx-jammy buildx-noble
 
 clean:
 	docker system prune -a -f
@@ -77,6 +83,7 @@ clean:
 	docker rmi $$(docker images 'vitexsoftware/debian:bullseye' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:bookworm' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/debian:trixie' -a -q)
+	docker rmi $$(docker images 'vitexsoftware/debian:forky' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:bionic' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:focal' -a -q)
 	docker rmi $$(docker images 'vitexsoftware/ubuntu:hirsute' -a -q)
@@ -93,6 +100,7 @@ push:
 	docker push vitexsoftware/debian:bullseye
 	docker push vitexsoftware/debian:bookworm
 	docker push vitexsoftware/debian:trixie
+	docker push vitexsoftware/debian:forky
 	docker push vitexsoftware/ubuntu:focal
 	docker push vitexsoftware/ubuntu:hirsute
 	docker push vitexsoftware/ubuntu:impish

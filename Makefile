@@ -1,111 +1,97 @@
-all: bullseye bookworm trixie forky focal jammy noble
+# Top-level Makefile to build Debian/Ubuntu images preconfigured with VitexSoftware APT repo
 
-stretch:
-	docker build -t vitexsoftware/debian:lts -t vitexsoftware/debian:stretch  -f debian:stretch/Dockerfile debian:stretch/
+# Image namespace
+NAMESPACE ?= vitexsoftware
+# Common repo settings
+REPO_URL ?= https://repo.vitexsoftware.com
+# Provide KEY_URL to enable repository signing (left empty by default to avoid build failures if key URL is unavailable)
+KEY_URL ?= https://repo.vitexsoftware.com/KEY.gpg
 
-buster:
-	docker build -t vitexsoftware/debian:buster -f debian:buster/Dockerfile debian:buster/
+# Supported variants
+DEBIAN_VARIANTS := bookworm trixie forky
+UBUNTU_VARIANTS := jammy noble
+ALL_VARIANTS := $(DEBIAN_VARIANTS) $(UBUNTU_VARIANTS)
 
-bullseye:
-	docker build -t vitexsoftware/debian:bullseye   -f debian:bullseye/Dockerfile debian:bullseye/
+# Image tags
+define IMAGE_TAG
+$(NAMESPACE)/$(if $(findstring $(1),$(DEBIAN_VARIANTS)),debian,ubuntu):$(1)
+endef
 
-bookworm:
-	docker build -t vitexsoftware/debian:bookworm -f debian:bookworm/Dockerfile debian:bookworm/
+.PHONY: all
+all: $(ALL_VARIANTS)
 
-forky:
-	docker build -t vitexsoftware/debian:forky -f debian:forky/Dockerfile debian:forky/
+# Generic single-variant build rules
+$(DEBIAN_VARIANTS): %: debian/%/Dockerfile
+	docker build \
+	  -f $< \
+	  --build-arg REPO_URL=$(REPO_URL) \
+	  --build-arg KEY_URL=$(KEY_URL) \
+	  -t $(call IMAGE_TAG,$@) \
+	  .
 
-bionic:
-	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:bionic -f ubuntu:bionic/Dockerfile ubuntu:bionic/
+$(UBUNTU_VARIANTS): %: ubuntu/%/Dockerfile
+	docker build \
+	  -f $< \
+	  --build-arg REPO_URL=$(REPO_URL) \
+	  --build-arg KEY_URL=$(KEY_URL) \
+	  -t $(call IMAGE_TAG,$@) \
+	  .
 
-focal:
-	docker build -t vitexsoftware/ubuntu:latest -t vitexsoftware/ubuntu:focal -f ubuntu:focal/Dockerfile ubuntu:focal/
+# Convenience explicit targets
+.PHONY: $(ALL_VARIANTS)
 
-hirsute:
-	docker build -t vitexsoftware/ubuntu:hirsute -f ubuntu:hirsute/Dockerfile ubuntu:hirsute/
+# Multi-arch buildx
+PLATFORMS ?= linux/amd64,linux/arm64
 
-impish:
-	docker build -t vitexsoftware/ubuntu:impish -f ubuntu:impish/Dockerfile ubuntu:impish/
+.PHONY: buildx buildx-%
+buildx: $(addprefix buildx-, $(ALL_VARIANTS))
 
-jammy:
-	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:jammy -f ubuntu:jammy/Dockerfile ubuntu:jammy/
+buildx-%: %
+	docker buildx build \
+	  --platform $(PLATFORMS) \
+	  -f $(if $(findstring $*, $(DEBIAN_VARIANTS)),debian/$*/Dockerfile,ubuntu/$*/Dockerfile) \
+	  --build-arg REPO_URL=$(REPO_URL) \
+	  --build-arg KEY_URL=$(KEY_URL) \
+	  -t $(call IMAGE_TAG,$*) \
+	  --load \
+	  .
 
-kinetic:
-	docker build -t vitexsoftware/ubuntu:stable -t vitexsoftware/ubuntu:kinetic -f ubuntu:kinetic/Dockerfile ubuntu:kinetic/
+# Push and publish
+.PHONY: push publish
+push:
+	for v in $(DEBIAN_VARIANTS); do docker push $(NAMESPACE)/debian:$$v; done
+	for v in $(UBUNTU_VARIANTS); do docker push $(NAMESPACE)/ubuntu:$$v; done
 
-noble:
-	docker build -t vitexsoftware/ubuntu:noble -f ubuntu:noble/Dockerfile ubuntu:noble/
+publish:
+	for v in $(DEBIAN_VARIANTS); do docker buildx build \
+		--platform $(PLATFORMS) \
+		-f debian/$$v/Dockerfile \
+		--build-arg REPO_URL=$(REPO_URL) \
+		--build-arg KEY_URL=$(KEY_URL) \
+		-t $(NAMESPACE)/debian:$$v \
+		--push \
+		.; done
+	for v in $(UBUNTU_VARIANTS); do docker buildx build \
+		--platform $(PLATFORMS) \
+		-f ubuntu/$$v/Dockerfile \
+		--build-arg REPO_URL=$(REPO_URL) \
+		--build-arg KEY_URL=$(KEY_URL) \
+		-t $(NAMESPACE)/ubuntu:$$v \
+		--push \
+		.; done
 
-trixie:
-	docker build -t vitexsoftware/debian:unstable -t vitexsoftware/debian:trixie -f debian:trixie/Dockerfile debian:trixie/
+# Lint Dockerfiles with hadolint
+.PHONY: lint
+lint:
+	@command -v hadolint >/dev/null 2>&1 || { echo "hadolint not found. Install from https://github.com/hadolint/hadolint/releases or your package manager." >&2; exit 127; }
+	@find . -maxdepth 3 -type f -name 'Dockerfile' -o -name 'Dockerfile*' -print0 | xargs -0 -r hadolint
 
-update:
-	ansible-playbook
-
-buildx-buster:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:buster debian:buster
-
-buildx-bullseye:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:bullseye debian:bullseye
-
-buildx-bookworm:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:bookworm debian:bookworm
-
-buildx-trixie:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:trixie debian:trixie
-
-buildx-forky:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/debian:forky debian:forky
-
-buildx-focal:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:focal ubuntu:focal
-
-buildx-hirsute:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:hirsute ubuntu:hirsute
-
-buildx-impish:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:impish ubuntu:impish
-
-buildx-jammy:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:jammy ubuntu:jammy
-
-buildx-kinetic:
-	docker buildx build --push --platform linux/arm/v7,linux/amd64/v3,linux/arm64/v8 --tag vitexsoftware/ubuntu:kinetic ubuntu:kinetic
-
-buildx-noble:
-	docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag vitexsoftware/ubuntu:noble ubuntu:noble
-
-buildx: buildx-bullseye buildx-bookworm buildx-trixie buildx-forky buildx-focal buildx-jammy buildx-noble
-
+# Clean
+.PHONY: clean reset
 clean:
-	docker system prune -a -f
-	docker rmi $$(docker images 'vitexsoftware/debian:buster' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/debian:bullseye' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/debian:bookworm' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/debian:trixie' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/debian:forky' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:bionic' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:focal' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:hirsute' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:impish' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:jammy' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:kinetic' -a -q)
-	docker rmi $$(docker images 'vitexsoftware/ubuntu:noble' -a -q)
-	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+	-@for v in $(DEBIAN_VARIANTS); do docker rmi -f $(NAMESPACE)/debian:$$v 2> /dev/null || true; done
+	-@for v in $(UBUNTU_VARIANTS); do docker rmi -f $(NAMESPACE)/ubuntu:$$v 2> /dev/null || true; done
+	-@docker image prune -f 2> /dev/null || true
 
 reset: clean all
 
-push:
-	docker push vitexsoftware/debian:buster
-	docker push vitexsoftware/debian:bullseye
-	docker push vitexsoftware/debian:bookworm
-	docker push vitexsoftware/debian:trixie
-	docker push vitexsoftware/debian:forky
-	docker push vitexsoftware/ubuntu:focal
-	docker push vitexsoftware/ubuntu:hirsute
-	docker push vitexsoftware/ubuntu:impish
-	docker push vitexsoftware/ubuntu:jammy
-	docker push vitexsoftware/ubuntu:kinetic
-	docker push vitexsoftware/ubuntu:noble
-
-publish: all push

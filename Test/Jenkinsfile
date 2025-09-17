@@ -5,7 +5,6 @@
 String[] distributions = ['debian:bookworm', 'debian:trixie', 'debian:forky', 'ubuntu:jammy', 'ubuntu:noble']
 
 String vendor = 'vitexsoftware'
-String imagePrefix = 'multiflexi-'
 //String distroFamily = ''
 
 properties([
@@ -26,6 +25,7 @@ distributions.each { distro ->
         println  "Dist:" + distroName
 
         def dist = distroName.split(':')
+        def distroFamily = dist[0]
         def distroCode = dist[1]
         def buildImage = ''
         def artifacts = []
@@ -35,7 +35,7 @@ distributions.each { distro ->
             ansiColor('xterm') {
                 stage('Checkout ' + distroName) {
                     checkout scm
-                    def imageName = vendor + '/' + imagePrefix + distroCode + ':latest'
+                    def imageName = vendor + '/' + distro
                     buildImage = docker.image(imageName)
                     sh 'git checkout debian/changelog'
                     def version = sh (

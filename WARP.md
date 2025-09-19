@@ -10,11 +10,9 @@ Common commands
   make
 
 - Build a specific image locally (examples):
-  make bullseye
   make bookworm
   make trixie
   make forky
-  make focal
   make jammy
   make noble
 
@@ -27,7 +25,6 @@ Common commands
   make buildx-bookworm
   make buildx-trixie
   make buildx-forky
-  make buildx-focal
   make buildx-jammy
   make buildx-noble
 
@@ -57,10 +54,14 @@ High-level architecture
 
 - Dockerfiles by distro/codename:
   - Stored in directories named with the pattern <family>:<codename>/Dockerfile (e.g., debian:bookworm/Dockerfile, ubuntu:jammy/Dockerfile).
+  - All Dockerfiles use the scripts/add-vitexsoftware-apt.sh script to configure APT repositories.
+  - VitexSoftware APT repository configuration includes both main and backports components:
+    - Main repository: http://repo.vitexsoftware.com/{codename}/main
+    - Backports repository: http://repo.vitexsoftware.com/{codename}/backports (corresponds to http://repo.vitexsoftware.cz/pool/backports/)
   - Content for a canonical Dockerfile is captured in ansible/templates/Dockerfile.j2, which:
     - Starts FROM the requested Debian codename.
     - Sets noninteractive locale to en_US.UTF-8.
-    - Adds VitexSoftware repository and keyring, installs packaging toolchain: pbuilder, debhelper, sudo, curl, wget, php, composer, lsb-release, jq, aptitude, gdebi-core, apt-utils, po-debconf.
+    - Adds VitexSoftware repository (main and backports) and keyring, installs packaging toolchain: pbuilder, debhelder, sudo, curl, wget, php, composer, lsb-release, jq, aptitude, gdebi-core, apt-utils, po-debconf.
     - Creates a jenkins user with passwordless sudo and prepares a workspace at /var/lib/jenkins/workspace/.
     - Adjusts PHP sendmail_path to capture mail to /tmp/mailfile.
 
@@ -85,6 +86,18 @@ Getting/using images
   docker pull vitexsoftware/debian:forky
   docker pull vitexsoftware/ubuntu:jammy
   docker pull vitexsoftware/ubuntu:noble
+
+Testing repository configuration
+- Verify that both main and backports repositories are configured:
+  # Build and test a specific image
+  make bookworm
+  docker run --rm vitexsoftware/debian:bookworm cat /etc/apt/sources.list.d/vitexsoftware.list
+  
+- Expected output should show both main and backports components:
+  deb [signed-by=/etc/apt/keyrings/vitexsoftware.gpg] https://repo.vitexsoftware.com bookworm main backports
+
+- Test package availability from backports:
+  docker run --rm vitexsoftware/debian:bookworm apt-cache policy
 
 Repository policies and external agent rules
 - No CLAUDE, Cursor, or Copilot rules were found in this repository. The README includes a basic quickstart (make) and links to Docker Hub tags; the critical parts are reflected above.

@@ -27,7 +27,7 @@ if [[ -n "${KEY_URL}" ]]; then
   echo "Fetching APT key from ${KEY_URL} ..."
   if curl -fsSL "${KEY_URL}" | gpg --dearmor > "${KEYRING}"; then
     chmod 0644 "${KEYRING}"
-    echo "deb [signed-by=${KEYRING}] ${REPO_URL} ${CODENAME} main" > "${LIST_FILE}"
+    echo "deb [signed-by=${KEYRING}] ${REPO_URL} ${CODENAME} main backports" > "${LIST_FILE}"
   else
     echo "WARNING: Failed to fetch key from ${KEY_URL}. Writing commented repo entry instead." 1>&2
     echo "# Failed to fetch key from: ${KEY_URL}" > "${LIST_FILE}"

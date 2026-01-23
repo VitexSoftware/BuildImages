@@ -20,7 +20,7 @@ RUN chmod +x /usr/local/bin/add-vitexsoftware-apt.sh \
        build-essential devscripts pbuilder sudo aptitude fakeroot git \
        php php-intl php-xml php-mbstring phpunit composer \
        gettext locales locales-all \
-       exim4 mailutils unzip lsb-release \
+       exim4 mailutils unzip lsb-release procps \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
     && echo "cs_CZ.UTF-8 UTF-8" >> /etc/locale.gen \
     && locale-gen en_US.UTF-8 cs_CZ.UTF-8 \

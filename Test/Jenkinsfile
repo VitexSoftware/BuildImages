@@ -2,7 +2,13 @@
 
 // Current version of this Pipeline https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile-parael
 
-String[] distributions = ['debian:bookworm', 'debian:trixie', 'debian:forky', 'ubuntu:jammy', 'ubuntu:noble']
+String[] distributions = [
+    'debian:bookworm',
+    'debian:trixie',
+    'debian:forky',
+    'ubuntu:jammy',
+    'ubuntu:noble'
+]
 
 String vendor = 'vitexsoftware'
 //String distroFamily = ''
@@ -19,6 +25,7 @@ node() {
 }
 
 def branches = [:]
+
 distributions.each { distro ->
     branches[distro] = {
         def distroName = distro
@@ -102,4 +109,12 @@ distributions.each { distro ->
         }
     }
 }
+
+
 parallel branches
+
+node {
+    stage('Publish to Aptly') {
+        publishDebToAptly(vendor)
+    }
+}

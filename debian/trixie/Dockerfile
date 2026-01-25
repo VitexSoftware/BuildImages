@@ -33,6 +33,7 @@ RUN chmod +x /usr/local/bin/add-vitexsoftware-apt.sh \
     && (id -u 222 >/dev/null 2>/dev/null || useradd -m -u 222 -g 222 -s /bin/bash -G sudo jenkins) \
     && echo 'jenkins ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/jenkins \
     && chmod 0440 /etc/sudoers.d/jenkins \
+    && update-alternatives --set fakeroot /usr/bin/fakeroot-tcp \
     && rm -rf /var/lib/apt/lists*
 
 CMD ["bash"]

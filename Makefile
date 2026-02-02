@@ -53,7 +53,7 @@ buildx-%: %
 	  --build-arg REPO_URL=$(REPO_URL) \
 	  --build-arg KEY_URL=$(KEY_URL) \
 	  -t $(call IMAGE_TAG,$*) \
-	  --load \
+	  --push \
 	  .
 
 # Push and publish

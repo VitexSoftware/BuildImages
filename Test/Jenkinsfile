@@ -82,19 +82,32 @@ distributions.each { distro ->
                         ]
 
                     def sorted_artifacts = artifacts.toList()
-                    installOrder.each { pkgPrefix ->
-                        def debFile = null
-                        for (item in sorted_artifacts) {
-                            def itemStr = item.toString()
-                            if (itemStr.startsWith(pkgPrefix) && itemStr.endsWith('.deb')) {
-                                debFile = itemStr
-                                break
+                    
+                    // If installOrder is empty, install all produced packages
+                    if (installOrder.isEmpty()) {
+                        sorted_artifacts.each { deb_file ->
+                            if (deb_file.endsWith('.deb')) {
+                                def pkgName = deb_file.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                sh 'echo -e "${GREEN} installing ' + pkgName + ' on `lsb_release -sc` ${ENDCOLOR} "'
+                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName + ' || sudo apt-get -y -f install'
                             }
                         }
-                        if (debFile) {
-                            def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
-                            sh 'echo -e "${GREEN} installing ' + pkgName + ' on `lsb_release -sc` ${ENDCOLOR} "'
-                            sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName + ' || sudo apt-get -y -f install'
+                    } else {
+                        // Install packages in specified order
+                        installOrder.each { pkgPrefix ->
+                            def debFile = null
+                            for (item in sorted_artifacts) {
+                                def itemStr = item.toString()
+                                if (itemStr.startsWith(pkgPrefix) && itemStr.endsWith('.deb')) {
+                                    debFile = itemStr
+                                    break
+                                }
+                            }
+                            if (debFile) {
+                                def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                sh 'echo -e "${GREEN} installing ' + pkgName + ' on `lsb_release -sc` ${ENDCOLOR} "'
+                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName + ' || sudo apt-get -y -f install'
+                            }
                         }
                     }
 

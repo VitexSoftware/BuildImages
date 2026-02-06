@@ -68,11 +68,22 @@ architectures.each {
                 }
                 stage('Build ' + architecture + ' ' + distribution) {
                     buildImage.inside {
+                        // Set unique build directories for this parallel build to avoid conflicts
+                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCodename + '-' + architecture + '-' + env.EXECUTOR_NUMBER
+                        sh '''
+                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                            mkdir -p "$DH_INTERNAL_BUILDDIR" "$TMPDIR"
+                        '''
                         sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         //                        sh 'sudo apt install -y libgnutls28-dev'
                         sh 'sudo chown jenkins:jenkins ..'
-                        sh 'debuild-pbuilder  -i -us -uc -b'
+                        sh '''
+                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                            debuild-pbuilder -i -us -uc -b
+                        '''
                         sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
                     }
                 }
@@ -90,7 +101,13 @@ architectures.each {
                 }
                 stage('Copy artifacts ' + architecture + ' ' + distribution ) {
                     buildImage.inside {
+                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCodename + '-' + architecture + '-' + env.EXECUTOR_NUMBER
                         sh 'mv $WORKSPACE/dist/debian/*.deb $WORKSPACE'
+                        // Cleanup temporary build directories
+                        sh '''
+                            rm -rf "/tmp/debhelper-build-''' + uniqueBuildId + '''" || true
+                            rm -rf "/tmp/build-''' + uniqueBuildId + '''" || true
+                        '''
                     }
                 }
             }

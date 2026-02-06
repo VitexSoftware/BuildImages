@@ -46,10 +46,21 @@ distributions.each { distro ->
                 }
                 stage('Build ' + distroName) {
                     buildImage.inside {
+                        // Set unique build directories for this parallel build to avoid conflicts
+                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCode + '-' + env.EXECUTOR_NUMBER
+                        sh '''
+                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                            mkdir -p "$DH_INTERNAL_BUILDDIR" "$TMPDIR"
+                        '''
                         sh 'dch -b -v ' + buildVer  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'sudo chown jenkins:jenkins ..'
-                        sh 'debuild-pbuilder -r"sudo -E" -i -us -uc -b'
+                        sh '''
+                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                            debuild-pbuilder -r"sudo -E" -i -us -uc -b
+                        '''
                         sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
                         artifacts = sh (
                             script: "cat debian/files | awk '{print \$1}'",
@@ -99,6 +110,7 @@ distributions.each { distro ->
 
                         // Cleanup: remove any produced files named in debian/files
                         // Try both the dist location and any potential original locations referenced by debian/files
+                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCode + '-' + env.EXECUTOR_NUMBER
                         sh '''
                             set -e
                             if [ -f debian/files ]; then
@@ -109,6 +121,9 @@ distributions.each { distro ->
                                 rm -f "$WORKSPACE/$file" || true
                               done < debian/files
                             fi
+                            # Cleanup temporary build directories
+                            rm -rf "/tmp/debhelper-build-''' + uniqueBuildId + '''" || true
+                            rm -rf "/tmp/build-''' + uniqueBuildId + '''" || true
                         '''
                     }
                 }

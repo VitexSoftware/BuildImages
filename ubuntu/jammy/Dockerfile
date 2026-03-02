@@ -12,7 +12,8 @@ RUN chmod +x /usr/local/bin/add-vitexsoftware-apt.sh \
     && echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure \
     && echo 'APT::Get::AllowUnauthenticated "true";' >> /etc/apt/apt.conf.d/99allow-unauth \
     && apt-get update \
-    && apt-get install -y --allow-unauthenticated --no-install-recommends ca-certificates curl gnupg debconf-utils \
+    && apt-get install -y --allow-unauthenticated --no-install-recommends ca-certificates curl gnupg debconf-utils software-properties-common \
+    && add-apt-repository -y universe \
     && echo 'pbuilder pbuilder/mirrorsite string http://deb.debian.org/debian' | debconf-set-selections \
     && add-vitexsoftware-apt.sh jammy "$REPO_URL" "$KEY_URL" \
     && apt-get update \

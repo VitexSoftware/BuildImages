@@ -6,7 +6,6 @@ To add badges for GitHub Actions, you can use the following markdown:
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/VitexSoftware/BuildImages/docker-image.yml?branch=main)
 
-
 Source of Docker images used for Debian/Ubuntu package building
 
 simply run
@@ -38,6 +37,7 @@ Stretch
 
 Buster
 ------
+
 ```shell
     docker pull vitexsoftware/debian:oldstable
 ```
@@ -45,14 +45,12 @@ Buster
 Bullseye
 --------
 
-
 ```shell
     docker pull vitexsoftware/debian:stable
 ```
 
-	Bookworm
-	--------
-
+ Bookworm
+ --------
 
 ```shell
     docker pull vitexsoftware/debian:testing
@@ -80,37 +78,35 @@ Forky
 Some packages built this way
 ----------------------------
 
-* https://github.com/Vitexus/factorio-headless-deb/
-* https://github.com/Vitexus/factorio-demo-deb/
-* https://github.com/VitexSoftware/php-ease-core/
-* https://github.com/VitexSoftware/netbeans-php-tools/
-* https://github.com/VitexSoftware/php-ease-twbootstrap4/
-* https://github.com/VitexSoftware/apt-repo-vitexsoftware/
-* https://github.com/Vitexus/libjs-font-awesome/
-* https://github.com/VitexSoftware/BuildImages/
-* https://github.com/VitexSoftware/DEBs-to-SQL/
-* https://github.com/VitexSoftware/igdebi/
-* https://github.com/VitexSoftware/php-ease-html/
-* https://github.com/VitexSoftware/abraflexi-dark-gui/
-* https://github.com/VitexSoftware/composer-debian/
-* https://github.com/VitexSoftware/php-ease-fluentpdo/
-* https://github.com/VitexSoftware/php-tools/
-* https://github.com/Spoje-NET/apache2-auth-redmine/
-* https://github.com/VitexSoftware/FirefoxDevelEditionDeb/
-* https://github.com/VitexSoftware/netbeans.deb/
-* https://github.com/Vitexus/ThunderbirdDailyDeb/
-* https://github.com/VitexSoftware/phar-composer/
-* https://github.com/Vitexus/WinBox.deb/
-* https://github.com/Vitexus/zellij/
-* https://github.com/Vitexus/FirefoxNightlyDeb/
-* https://github.com/PureHTML/mcfly/
-* https://github.com/Vitexus/phpDocumentor-deb/
-* https://github.com/Vitexus/automated-time-tracking-with-toggl-on-linux/
+* <https://github.com/Vitexus/factorio-headless-deb/>
+* <https://github.com/Vitexus/factorio-demo-deb/>
+* <https://github.com/VitexSoftware/php-ease-core/>
+* <https://github.com/VitexSoftware/netbeans-php-tools/>
+* <https://github.com/VitexSoftware/php-ease-twbootstrap4/>
+* <https://github.com/VitexSoftware/apt-repo-vitexsoftware/>
+* <https://github.com/Vitexus/libjs-font-awesome/>
+* <https://github.com/VitexSoftware/BuildImages/>
+* <https://github.com/VitexSoftware/DEBs-to-SQL/>
+* <https://github.com/VitexSoftware/igdebi/>
+* <https://github.com/VitexSoftware/php-ease-html/>
+* <https://github.com/VitexSoftware/abraflexi-dark-gui/>
+* <https://github.com/VitexSoftware/composer-debian/>
+* <https://github.com/VitexSoftware/php-ease-fluentpdo/>
+* <https://github.com/VitexSoftware/php-tools/>
+* <https://github.com/Spoje-NET/apache2-auth-redmine/>
+* <https://github.com/VitexSoftware/FirefoxDevelEditionDeb/>
+* <https://github.com/VitexSoftware/netbeans.deb/>
+* <https://github.com/Vitexus/ThunderbirdDailyDeb/>
+* <https://github.com/VitexSoftware/phar-composer/>
+* <https://github.com/Vitexus/WinBox.deb/>
+* <https://github.com/Vitexus/zellij/>
+* <https://github.com/Vitexus/FirefoxNightlyDeb/>
+* <https://github.com/PureHTML/mcfly/>
+* <https://github.com/Vitexus/phpDocumentor-deb/>
+* <https://github.com/Vitexus/automated-time-tracking-with-toggl-on-linux/>
 
 Update listing time using:
 
 ```shell
 find /var/lib/jenkins/ -name "config.xml" | grep "jenkins" | xargs cat | grep projectUrl | sed 's/     <projectUrl>/ \* /g' | sed 's/<\/projectUrl>//g'
 ```
-
-

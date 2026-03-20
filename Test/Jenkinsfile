@@ -1,6 +1,6 @@
 #!groovy
 
-// Current version of this Pipeline https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile-parael
+// Current version of this Pipeline https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile
 
 String[] distributions = ['debian:bookworm', 'debian:trixie', 'debian:forky', 'ubuntu:jammy', 'ubuntu:noble']
 
@@ -56,6 +56,7 @@ distributions.each { distro ->
                         sh 'dch -b -v ' + buildVer  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'sudo chown jenkins:jenkins ..'
+                        sh 'sudo rm -rf debian/$(dpkg-parsechangelog --show-field Source)/ debian/.debhelper/ debian/tmp/'
                         sh '''
                             export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
                             export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
@@ -89,7 +90,7 @@ distributions.each { distro ->
                             if (deb_file.endsWith('.deb')) {
                                 def pkgName = deb_file.tokenize('/')[-1].replaceFirst(/_.*/, '')
                                 sh 'echo -e "${GREEN} installing ' + pkgName + ' on `lsb_release -sc` ${ENDCOLOR} "'
-                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName + ' || sudo apt-get -y -f install'
+                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName
                             }
                         }
                     } else {
@@ -106,7 +107,7 @@ distributions.each { distro ->
                             if (debFile) {
                                 def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
                                 sh 'echo -e "${GREEN} installing ' + pkgName + ' on `lsb_release -sc` ${ENDCOLOR} "'
-                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName + ' || sudo apt-get -y -f install'
+                                sh 'sudo DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug + ' apt-get -y install ' + pkgName
                             }
                         }
                     }

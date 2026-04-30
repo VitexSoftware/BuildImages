@@ -22,55 +22,50 @@ testing install into docker container
 Ready to use images
 -------------------
 
-```shell
-    docker pull vitexsoftware/debian:oldstable
-```
-
 * [Debian](https://hub.docker.com/r/vitexsoftware/debian/tags?page=1&ordering=last_updated)
 
-Stretch
--------
+Bookworm (stable)
+-----------------
 
 ```shell
-    docker pull vitexsoftware/debian:lts
+docker pull vitexsoftware/debian:bookworm
 ```
 
-Buster
-------
+Trixie (testing)
+----------------
 
 ```shell
-    docker pull vitexsoftware/debian:oldstable
+docker pull vitexsoftware/debian:trixie
 ```
 
-Bullseye
---------
+Forky (unstable)
+----------------
 
 ```shell
-    docker pull vitexsoftware/debian:stable
-```
-
- Bookworm
- --------
-
-```shell
-    docker pull vitexsoftware/debian:testing
-```
-
-Forky
------
-
-```shell
-    docker pull vitexsoftware/debian:forky
+docker pull vitexsoftware/debian:forky
 ```
 
 * [Ubuntu](https://hub.docker.com/r/vitexsoftware/ubuntu/tags?page=1&ordering=last_updated)
 
-```shell
-    docker pull vitexsoftware/ubuntu:stable
-```
+Jammy Jellyfish (22.04 LTS)
+----------------------------
 
 ```shell
-    docker pull vitexsoftware/ubuntu:testing
+docker pull vitexsoftware/ubuntu:jammy
+```
+
+Noble Numbat (24.04 LTS)
+-------------------------
+
+```shell
+docker pull vitexsoftware/ubuntu:noble
+```
+
+Resolute Raccoon (26.04 LTS)
+-----------------------------
+
+```shell
+docker pull vitexsoftware/ubuntu:resolute
 ```
 
 ![My Build farm](maliny-mini.jpg?raw=true)

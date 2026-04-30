@@ -9,7 +9,7 @@ KEY_URL ?= https://repo.vitexsoftware.com/KEY.gpg
 
 # Supported variants
 DEBIAN_VARIANTS := bookworm trixie forky
-UBUNTU_VARIANTS := jammy noble
+UBUNTU_VARIANTS := jammy noble resolute
 ALL_VARIANTS := $(DEBIAN_VARIANTS) $(UBUNTU_VARIANTS)
 
 # Image tags

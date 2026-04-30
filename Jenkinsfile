@@ -1,6 +1,6 @@
 #!groovy
 String[] architectures = ['amd64', 'armhf', 'aarch64']
-String[] distributions = ['debian:bookworm', 'debian:trixie', 'debian:forky', 'ubuntu:jammy', 'ubuntu:noble']
+String[] distributions = ['debian:bookworm', 'debian:trixie', 'debian:forky', 'ubuntu:jammy', 'ubuntu:noble', 'ubuntu:resolute']
 
 String vendor = 'vitexsoftware'
 String distribution = ''

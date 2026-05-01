@@ -7,6 +7,7 @@ ARG KEY_URL=https://repo.vitexsoftware.com/KEY.gpg
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY scripts/add-vitexsoftware-apt.sh /usr/local/bin/add-vitexsoftware-apt.sh
+COPY ubuntu/resolute/locale.alias /usr/share/locale/locale.alias
 RUN chmod +x /usr/local/bin/add-vitexsoftware-apt.sh \
     && echo 'Acquire::Check-Valid-Until "false";' >> /etc/apt/apt.conf.d/10no-check-valid-until \
     && echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure \

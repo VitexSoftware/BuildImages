@@ -14,6 +14,7 @@ properties([
 node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
+            sh 'sudo chown -R jenkins:jenkins . 2>/dev/null || true'
             checkout scm
         }
     }
@@ -34,6 +35,7 @@ distributions.each {
     node {
         ansiColor('xterm') {
             stage('Checkout ' + distribution) {
+                sh 'sudo chown -R jenkins:jenkins . 2>/dev/null || true'
                 checkout scm
                 buildImage = docker.image(vendor + '/' + distribution)
                 sh 'git checkout debian/changelog'

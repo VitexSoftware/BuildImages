@@ -18,6 +18,7 @@ properties([
 node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
+            sh 'sudo chown -R jenkins:jenkins . 2>/dev/null || true'
             checkout scm
             def control = readFile(file:  env.WORKSPACE + '/debian/control')
             def lines = control.readLines()

@@ -84,7 +84,7 @@ distributions.each { distro ->
                         sh '''
                             mkdir -p $WORKSPACE/dist/debian/
                             rm -rf $WORKSPACE/dist/debian/*
-                            while IFS= read -r deb _; do
+                            while read -r deb _; do
                                 case "$deb" in -*) continue;; esac
                                 [ -n "$deb" ] || continue
                                 mv -- "../$deb" "$WORKSPACE/dist/debian/"

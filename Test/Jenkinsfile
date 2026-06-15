@@ -17,7 +17,7 @@ String vendor = 'vitexsoftware'
 //String distroFamily = ''
 
 properties([
-    copyArtifactPermission('Foregin/*'),
+    copyArtifactPermission('*'),
     buildBlocker(
         useBuildBlocker: true,
         blockLevel: 'GLOBAL',
@@ -52,17 +52,18 @@ distributions.each { distro ->
                 stage('Checkout ' + distroName) {
                     sh 'sudo chown -R jenkins:jenkins . 2>/dev/null || true'
                     checkout scm
-                    def imageName = vendor + '/' + distro
-                    buildImage = docker.image(imageName)
-                    sh 'git checkout debian/changelog'
-                    def version = sh (
-                        script: 'dpkg-parsechangelog --show-field Version',
-                        returnStdout: true
-                    ).trim()
-                    buildVer = version + '.' + env.BUILD_NUMBER  + '~' + distroCode
+                    buildImage = docker.image(vendor + '/' + distro)
                 }
                 stage('Build ' + distroName) {
                     buildImage.inside {
+                        // Git operations run inside the container to avoid index.lock conflicts
+                        // when multiple parallel branches share the same Jenkins agent node.
+                        sh 'git checkout debian/changelog'
+                        def version = sh(
+                            script: 'dpkg-parsechangelog --show-field Version',
+                            returnStdout: true
+                        ).trim()
+                        buildVer = version + '.' + env.BUILD_NUMBER + '~' + distroCode
                         // Set unique build directories for this parallel build to avoid conflicts
                         def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCode + '-' + env.EXECUTOR_NUMBER
                         sh '''
@@ -84,7 +85,7 @@ distributions.each { distro ->
                         sh '''
                             mkdir -p $WORKSPACE/dist/debian/
                             rm -rf $WORKSPACE/dist/debian/*
-                            while read -r deb _; do
+                            while IFS= read -r deb _; do
                                 case "$deb" in -*) continue;; esac
                                 [ -n "$deb" ] || continue
                                 mv -- "../$deb" "$WORKSPACE/dist/debian/"

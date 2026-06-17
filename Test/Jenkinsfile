@@ -3,12 +3,12 @@
 // Current version of this Pipeline https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile
 
 String[] distributions = [
-			'debian:bookworm', 
-			'debian:trixie', 
+			'debian:bookworm',
+			'debian:trixie',
 			// 'debian:forky', // Disabled: Forky is still unstable/research-only.
 			//                 // The full Debian package ecosystem is not yet available for Forky.
 			//                 // Re-enable once the stack builds cleanly for Forky.
-			'ubuntu:jammy', 
+			'ubuntu:jammy',
 			'ubuntu:noble',
 			'ubuntu:resolute',
 ]
@@ -105,49 +105,48 @@ distributions.each { distro ->
                         sh 'echo "deb [trusted=yes] file://///$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'echo "INSTALATION"'
-                      
+
                         def installOrder = [
-//                        '',
+                            'multiflexi-sqlite',
                         ]
 
-                    def sorted_artifacts = artifacts.toList()
-                    
-                    // If installOrder is empty, install all produced packages
-                    if (installOrder.isEmpty()) {
-                        sorted_artifacts.each { deb_file ->
-                            if (deb_file.endsWith('.deb')) {
-                                def pkgName = deb_file.tokenize('/')[-1].replaceFirst(/_.*/, '')
-                                if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
-                                withEnv(["PKG=${pkgName}"]) {
-                                    sh 'echo "Installing $PKG on $(lsb_release -sc)"'
-                                    sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
-                                }
-                            }
-                        }
-                    } else {
-                        // Install packages in specified order
-                        installOrder.each { pkgPrefix ->
-                            def debFile = null
-                            for (item in sorted_artifacts) {
-                                def itemStr = item.toString()
-                                if (itemStr.startsWith(pkgPrefix) && itemStr.endsWith('.deb')) {
-                                    debFile = itemStr
-                                    break
-                                }
-                            }
-                            if (debFile) {
-                                def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
-                                if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
-                                withEnv(["PKG=${pkgName}"]) {
-                                    sh 'echo "Installing $PKG on $(lsb_release -sc)"'
-                                    sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
-                                }
-                            }
-                        }
-                    }
-                    sh 'sudo rm -f /etc/apt/sources.list.d/local.list'
+                        def sorted_artifacts = artifacts.toList()
 
-                }
+                        // If installOrder is empty, install all produced packages
+                        if (installOrder.isEmpty()) {
+                            sorted_artifacts.each { deb_file ->
+                                if (deb_file.endsWith('.deb')) {
+                                    def pkgName = deb_file.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                    if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
+                                    withEnv(["PKG=${pkgName}"]) {
+                                        sh 'echo "Installing $PKG on $(lsb_release -sc)"'
+                                        sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
+                                    }
+                                }
+                            }
+                        } else {
+                            // Install packages in specified order
+                            installOrder.each { pkgPrefix ->
+                                def debFile = null
+                                for (item in sorted_artifacts) {
+                                    def itemStr = item.toString()
+                                    if (itemStr.startsWith(pkgPrefix) && itemStr.endsWith('.deb')) {
+                                        debFile = itemStr
+                                        break
+                                    }
+                                }
+                                if (debFile) {
+                                    def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                    if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
+                                    withEnv(["PKG=${pkgName}"]) {
+                                        sh 'echo "Installing $PKG on $(lsb_release -sc)"'
+                                        sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
+                                    }
+                                }
+                            }
+                        }
+                        sh 'sudo rm -f /etc/apt/sources.list.d/local.list'
+                    }
                 }
                 stage('Archive artifacts ' + distroName ) {
                     // Only run if previous stages (Build and Test) succeeded

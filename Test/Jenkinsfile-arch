@@ -34,9 +34,9 @@ node() {
                     def (key,value) = line.split(': ').collect { it.trim() }
                     if (key == 'Architecture') {
                         if (value == 'any') {
-                            architectures = ['amd64', 'armhf', 'aarch64']
+                            architectures = ['amd64', 'armhf', 'arm64']
                         } else {
-                            architectures = [value]
+                            architectures = value.trim().split(/\s+/)
                         }
                     }
                 }

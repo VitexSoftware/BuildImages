@@ -13,24 +13,139 @@ String architecture = ''
 String distroCodename = ''
 String ver = ''
 
+// --- Node-local workspace isolation ---------------------------------------
+// /var/lib/jenkins/workspace is ONE shared NFS4 export from the controller,
+// mounted at the same path on every agent, and Jenkins computes its @N
+// workspace disambiguation per node -- so the same job running on two nodes
+// lands in the SAME physical directory. The job-folder parent (`..`), where
+// debuild drops .deb/.changes, is shared by every job on every node as well.
+// The export is root_squash, so `sudo chown`/`sudo rm` there are no-ops.
+//
+// Therefore: nothing is built in the shared workspace. Each parallel branch
+// builds in its own git worktree on node-local disk, derived from a persistent
+// node-local mirror of the repo. The mirror is cloned at most once per node per
+// repo, ever, and afterwards only fetched -- and only when the wanted commit is
+// not already present locally. There is no clone-per-branch path, so adding
+// parallel branches adds no github.com requests. That matters most here: this
+// template builds a large third-party upstream repository.
+
+// Probe the node-local build root at runtime; it differs per agent
+// (fallgold: ZFS /mnt/datastore/hd710pro/jenkins, tulameen: ext4 /mnt/ssd/jenkins).
+// A JENKINS_LOCAL_BUILD_ROOT node environment variable overrides the probe.
+def nodeLocalRoot() {
+    return sh(script: '''
+        set -eu
+        if [ -n "${JENKINS_LOCAL_BUILD_ROOT:-}" ] && [ -w "${JENKINS_LOCAL_BUILD_ROOT}" ]; then
+            printf '%s\\n' "${JENKINS_LOCAL_BUILD_ROOT}"; exit 0
+        fi
+        for cand in /mnt/datastore/hd710pro/jenkins /mnt/ssd/jenkins; do
+            if [ -d "$cand" ] && [ -w "$cand" ]; then printf '%s\\n' "$cand"; exit 0; fi
+        done
+        # Last resort: $JENKINS_HOME is local disk on every agent; only its
+        # workspace/ subdirectory is the shared NFS export.
+        fallback="${HOME:-/var/lib/jenkins}/local-builds"
+        mkdir -p "$fallback"
+        printf '%s\\n' "$fallback"
+    ''', returnStdout: true).trim()
+}
+
+// Build a collision-proof id: unique per build, per distro, per node, per executor.
+def localBuildId(String distroCode, String extra = '') {
+    def raw = [env.JOB_NAME, env.BUILD_NUMBER, distroCode, extra, env.NODE_NAME, env.EXECUTOR_NUMBER]
+                  .findAll { it }.join('-')
+    return raw.replaceAll(/[^A-Za-z0-9._-]/, '_')
+}
+
+// Bootstrap workspace for the single SCM checkout of this build. It must not be
+// the shared NFS workspace: Jenkins assigns the @N workspace suffix per node, so
+// the same job running on two nodes resolves to the SAME physical directory
+// there -- the confirmed cross-node collision. Keying on job + node + executor
+// makes this path unique across nodes and across concurrent builds on one node,
+// while staying stable across consecutive builds, so Jenkins does an incremental
+// `git fetch` here rather than a fresh clone. That keeps the whole build to one
+// github.com fetch, no matter how many parallel branches follow.
+def bootstrapWs(String root) {
+    def key = [env.JOB_NAME, env.NODE_NAME, env.EXECUTOR_NUMBER].findAll { it }.join('-')
+    return root + '/bootstrap/' + key.replaceAll(/[^A-Za-z0-9._-]/, '_')
+}
+
+// Create the per-build tree. Returns [mirror:, base:, tree:, out:].
+//   base = per-build private directory (debuild drops .deb/.changes into it)
+//   tree = base/src, the checkout itself
+//   out  = base/dist, the staged local apt repository
+def localBuildTree(String root, String gitUrl, String gitCommit, String buildId) {
+    def slug   = gitUrl.replaceAll(/[^A-Za-z0-9._-]/, '_')
+    def mirror = root + '/ref/' + slug + '.git'
+    def base   = root + '/build/' + buildId
+    def t      = [mirror: mirror, base: base, tree: base + '/src', out: base + '/dist']
+    withEnv(["LB_ROOT=${root}", "LB_MIRROR=${mirror}", "LB_BASE=${base}",
+             "LB_TREE=${t.tree}", "LB_OUT=${t.out}",
+             "LB_URL=${gitUrl}", "LB_SHA=${gitCommit}"]) {
+        sh '''
+            set -eu
+            case "$LB_ROOT/$LB_BASE/$LB_MIRROR" in */*/*) : ;; *) echo "refusing: bad build root"; exit 1;; esac
+            mkdir -p "$LB_ROOT/ref" "$LB_ROOT/build" "$LB_ROOT/locks"
+            lock="$LB_ROOT/locks/$(basename "$LB_MIRROR").lock"
+            # Serialise mirror maintenance between parallel branches on this node.
+            flock "$lock" sh -c '
+                set -eu
+                if [ ! -d "$LB_MIRROR" ]; then
+                    git clone --mirror "$LB_URL" "$LB_MIRROR"
+                elif ! git -C "$LB_MIRROR" cat-file -e "$LB_SHA^{commit}" 2>/dev/null; then
+                    git -C "$LB_MIRROR" fetch --prune --tags origin "+refs/heads/*:refs/heads/*"
+                fi
+                git -C "$LB_MIRROR" worktree prune
+            '
+            rm -rf "$LB_BASE"
+            mkdir -p "$LB_OUT"
+            git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
+        '''
+    }
+    return t
+}
+
+// Tear the per-build tree down again. Uses the NFS-safe `find -delete` pattern
+// (runs as the jenkins uid, needs no root) rather than `sudo rm`.
+def localBuildTreeRelease(Map t) {
+    withEnv(["LB_MIRROR=${t.mirror}", "LB_BASE=${t.base}", "LB_TREE=${t.tree}"]) {
+        sh '''
+            set -u
+            git -C "$LB_MIRROR" worktree remove --force "$LB_TREE" 2>/dev/null || true
+            git -C "$LB_MIRROR" worktree prune 2>/dev/null || true
+            if [ -n "$LB_BASE" ] && [ -d "$LB_BASE" ]; then
+                find "$LB_BASE" -mindepth 1 -delete 2>/dev/null || true
+                rmdir -- "$LB_BASE" 2>/dev/null || true
+            fi
+        '''
+    }
+}
+// --- end node-local workspace isolation -----------------------------------
+
 properties([
     copyArtifactPermission('*')
 ])
+
+def scmVars = [:]
 node() {
     ansiColor('xterm') {
         stage('SCM Checkout') {
-            sh 'sudo chown -R jenkins:jenkins . 2>/dev/null || true'
-            checkout([$class: 'GitSCM', branches: [[name: '*/' + repoBranch ]], extensions: [], userRemoteConfigs: [[url: repoUrl]]])
-            def control = readFile(file:  env.WORKSPACE + '/debian/control')
-            def lines = control.readLines()
-            for (line in lines) {
-                if (line.trim()) {
-                    def (key,value) = line.split(': ').collect { it.trim() }
-                    if (key == 'Architecture') {
-                        if (value == 'any') {
-                            architectures = ['amd64', 'armhf', 'aarch64']
-                        } else {
-                            architectures = [value]
+            // Run the one github.com checkout of this build on node-local disk,
+            // off the shared NFS workspace export, so a concurrent build of this
+            // same job on another node cannot land in the same directory.
+            ws(bootstrapWs(nodeLocalRoot())) {
+                // The one and only github.com checkout of this build.
+                scmVars = checkout([$class: 'GitSCM', branches: [[name: '*/' + repoBranch ]], extensions: [], userRemoteConfigs: [[url: repoUrl]]])
+                def control = readFile(file:  pwd() + '/debian/control')
+                def lines = control.readLines()
+                for (line in lines) {
+                    if (line.trim()) {
+                        def (key,value) = line.split(': ').collect { it.trim() }
+                        if (key == 'Architecture') {
+                            if (value == 'any') {
+                                architectures = ['amd64', 'armhf', 'aarch64']
+                            } else {
+                                architectures = [value]
+                            }
                         }
                     }
                 }
@@ -38,6 +153,8 @@ node() {
         }
     }
 }
+
+String gitCommit = scmVars.GIT_COMMIT
 
 architectures.each {
     architecture = it
@@ -57,58 +174,114 @@ architectures.each {
 
         node(architecture) {
             ansiColor('xterm') {
-                stage('Checkout ' + architecture + ' ' + distribution) {
-                    buildImage = docker.image(imageVendor + '/' + distribution)
-                    sh 'cd ' + env.WORKSPACE + '; ls -la; pwd'
-                    sh 'git checkout debian/changelog'
-                    def String pkgVer = sh(
-                        script: 'dpkg-parsechangelog --show-field Version',
-                        returnStdout: true
-                    ).trim()
-                    ver = pkgVer + '~' + distroCodename + '~' + env.BUILD_NUMBER
-                }
-                stage('Build ' + architecture + ' ' + distribution) {
-                    buildImage.inside {
-                        // Set unique build directories for this parallel build to avoid conflicts
-                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCodename + '-' + architecture + '-' + env.EXECUTOR_NUMBER
-                        sh '''
-                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
-                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
-                            mkdir -p "$DH_INTERNAL_BUILDDIR" "$TMPDIR"
-                        '''
-                        sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
-                        sh 'sudo apt-get update --allow-releaseinfo-change'
-                        //                        sh 'sudo apt install -y libgnutls28-dev'
-                        sh 'sudo chown jenkins:jenkins ..'
-                        sh '''
-                            export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
-                            export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
-                            debuild-pbuilder -i -us -uc -b
-                        '''
-                        sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
+                def root = nodeLocalRoot()
+                def buildId = localBuildId(distroCodename, architecture)
+                def t = null
+                try {
+                    stage('Checkout ' + architecture + ' ' + distribution) {
+                        t = localBuildTree(root, repoUrl, gitCommit, buildId)
+                        echo "Node-local build tree: ${t.tree} (node ${env.NODE_NAME})"
+                        buildImage = docker.image(imageVendor + '/' + distribution)
+                        dir(t.tree) {
+                            sh 'ls -la; pwd'
+                            sh 'git checkout debian/changelog'
+                            def String pkgVer = sh(
+                                script: 'dpkg-parsechangelog --show-field Version',
+                                returnStdout: true
+                            ).trim()
+                            ver = pkgVer + '~' + distroCodename + '~' + env.BUILD_NUMBER
+                        }
                     }
-                }
+                    stage('Build ' + architecture + ' ' + distribution) {
+                        // -v mounts the node-local tree into the container; the
+                        // shared NFS workspace is not used for building at all.
+                        buildImage.inside('-v ' + t.base + ':' + t.base) {
+                            dir(t.tree) {
+                                // Set unique build directories for this parallel build to avoid conflicts
+                                def uniqueBuildId = buildId
+                                sh '''
+                                    export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                                    export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                                    mkdir -p "$DH_INTERNAL_BUILDDIR" "$TMPDIR"
+                                '''
+                                sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
+                                sh 'sudo apt-get update --allow-releaseinfo-change'
+                                //                        sh 'sudo apt install -y libgnutls28-dev'
+                                sh '''
+                                    export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
+                                    export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
+                                    debuild-pbuilder -i -us -uc -b
+                                '''
+                                // debuild drops .deb/.changes into `..`, which is
+                                // now t.base -- private to this build on this node,
+                                // never the shared job-folder directory.
+                                withEnv(["LB_OUT=${t.out}"]) {
+                                    sh '''
+                                        set -eu
+                                        mkdir -p "$LB_OUT"
+                                        find "$LB_OUT" -mindepth 1 -delete 2>/dev/null || true
+                                        for deb in $(awk '{print $1}' debian/files); do
+                                            mv -- "../$deb" "$LB_OUT/"
+                                        done
+                                    '''
+                                }
+                            }
+                        }
+                    }
 
-                stage('Test ' + architecture + ' ' + distribution) {
-                    buildImage.inside {
-                        def debconf_debug = 0 //Set to "5" or "developer" to debug debconf
-                        sh 'cd $WORKSPACE/dist/debian/ ; dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz; cd $WORKSPACE'
-                        sh 'echo "deb [trusted=yes] file://///$WORKSPACE/dist/debian/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
-                        sh 'sudo apt-get update --allow-releaseinfo-change'
-                        sh 'echo "INSTALATION"'
-                        sh 'IFS="\n\b"; for package in  `cat debian/files | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug  + ' apt-get -y install $WORKSPACE/dist/debian/$package ; done;'
-                        stash includes: 'dist/**', name: 'dist-' + distroCodename
+                    stage('Test ' + architecture + ' ' + distribution) {
+                        buildImage.inside('-v ' + t.base + ':' + t.base) {
+                            dir(t.tree) {
+                                def debconf_debug = 0 //Set to "5" or "developer" to debug debconf
+                                withEnv(["LB_OUT=${t.out}"]) {
+                                    sh 'cd "$LB_OUT" ; dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz'
+                                    sh 'echo "deb [trusted=yes] file://$LB_OUT/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
+                                    sh 'sudo apt-get update --allow-releaseinfo-change'
+                                    sh 'echo "INSTALATION"'
+                                    sh 'IFS="\n\b"; for package in  `cat debian/files | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug  + ' apt-get -y install $LB_OUT/$package ; done;'
+                                    sh 'sudo rm -f /etc/apt/sources.list.d/local.list'
+                                }
+                            }
+                        }
                     }
-                }
-                stage('Copy artifacts ' + architecture + ' ' + distribution ) {
-                    buildImage.inside {
-                        def uniqueBuildId = env.BUILD_NUMBER + '-' + distroCodename + '-' + architecture + '-' + env.EXECUTOR_NUMBER
-                        sh 'mv $WORKSPACE/dist/debian/*.deb $WORKSPACE'
-                        // Cleanup temporary build directories
+                    stage('Copy artifacts ' + architecture + ' ' + distribution ) {
+                        // stash/archive can only reach files under $WORKSPACE, so
+                        // stage them into a per-build subdirectory there. The name
+                        // carries job, build, distro, arch, node and executor, so
+                        // two nodes sharing this one NFS workspace cannot collide.
+                        def stageDir = 'dist/' + buildId
+                        withEnv(["LB_OUT=${t.out}", "LB_STAGE=${stageDir}"]) {
+                            sh '''
+                                set -eu
+                                : "${WORKSPACE:?WORKSPACE unset}"
+                                mkdir -p "$WORKSPACE/$LB_STAGE"
+                                find "$WORKSPACE/$LB_STAGE" -mindepth 1 -delete 2>/dev/null || true
+                                cp -a "$LB_OUT"/. "$WORKSPACE/$LB_STAGE"/
+                            '''
+                        }
+                        stash includes: stageDir + '/**', name: 'dist-' + buildId
+                        archiveArtifacts artifacts: stageDir + '/*.deb', allowEmptyArchive: true
+                        // NFS-safe cleanup of the staging directory: plain
+                        // find/delete as the jenkins uid, because root_squash on
+                        // the workspace export makes `sudo rm` a no-op there.
+                        withEnv(["LB_STAGE=${stageDir}"]) {
+                            sh '''
+                                set -u
+                                : "${WORKSPACE:?WORKSPACE unset}"
+                                if [ -d "$WORKSPACE/$LB_STAGE" ]; then
+                                    find "$WORKSPACE/$LB_STAGE" -mindepth 1 -delete 2>/dev/null || true
+                                    rmdir -- "$WORKSPACE/$LB_STAGE" 2>/dev/null || true
+                                fi
+                            '''
+                        }
+                    }
+                } finally {
+                    stage('Cleanup ' + architecture + ' ' + distribution) {
                         sh '''
-                            rm -rf "/tmp/debhelper-build-''' + uniqueBuildId + '''" || true
-                            rm -rf "/tmp/build-''' + uniqueBuildId + '''" || true
+                            rm -rf "/tmp/debhelper-build-''' + buildId + '''" || true
+                            rm -rf "/tmp/build-''' + buildId + '''" || true
                         '''
+                        if (t) { localBuildTreeRelease(t) }
                     }
                 }
             }

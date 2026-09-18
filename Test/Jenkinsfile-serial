@@ -32,8 +32,15 @@ def nodeLocalRoot() {
         if [ -n "${JENKINS_LOCAL_BUILD_ROOT:-}" ] && [ -w "${JENKINS_LOCAL_BUILD_ROOT}" ]; then
             printf '%s\\n' "${JENKINS_LOCAL_BUILD_ROOT}"; exit 0
         fi
+        # Prefer a *subdirectory* of the local jenkins disk. On tulameen
+        # /mnt/ssd/jenkins is bind-mounted to $JENKINS_HOME, whose workspace/
+        # child is the shared NFS export -- never build in that child.
         for cand in /mnt/datastore/hd710pro/jenkins /mnt/ssd/jenkins; do
-            if [ -d "$cand" ] && [ -w "$cand" ]; then printf '%s\\n' "$cand"; exit 0; fi
+            if [ -d "$cand" ] && [ -w "$cand" ]; then
+                dest="$cand/local-builds"
+                mkdir -p "$dest"
+                if [ -w "$dest" ]; then printf '%s\\n' "$dest"; exit 0; fi
+            fi
         done
         # Last resort: $JENKINS_HOME is local disk on every agent; only its
         # workspace/ subdirectory is the shared NFS export.
@@ -63,34 +70,65 @@ def bootstrapWs(String root) {
     return root + '/bootstrap/' + key.replaceAll(/[^A-Za-z0-9._-]/, '_')
 }
 
+// Seed or update the persistent node-local bare mirror. Prefer a local
+// checkout as the object source (zero extra github.com clones). Network
+// clone/fetch of origin happens only when this node has no copy of the
+// wanted commit. Parallel branches never clone; they only add worktrees.
+def seedNodeMirror(String root, String gitUrl, String gitCommit, String seedDir = '') {
+    def slug   = gitUrl.replaceAll(/[^A-Za-z0-9._-]/, '_')
+    def mirror = root + '/ref/' + slug + '.git'
+    withEnv(["LB_ROOT=${root}", "LB_MIRROR=${mirror}", "LB_URL=${gitUrl}",
+             "LB_SHA=${gitCommit}", "LB_SEED=${seedDir}"]) {
+        sh '''
+            set -eu
+            case "$LB_ROOT/$LB_MIRROR" in */*) : ;; *) echo "refusing: bad build root"; exit 1;; esac
+            mkdir -p "$LB_ROOT/ref" "$LB_ROOT/locks"
+            lock="$LB_ROOT/locks/$(basename "$LB_MIRROR").lock"
+            flock "$lock" sh -c '
+                set -eu
+                seed=""
+                if [ -n "${LB_SEED:-}" ] && { [ -d "$LB_SEED/.git" ] || [ -f "$LB_SEED/HEAD" ]; }; then
+                    seed="$LB_SEED"
+                fi
+                if [ ! -d "$LB_MIRROR" ]; then
+                    if [ -n "$seed" ]; then
+                        git clone --mirror "$seed" "$LB_MIRROR"
+                        git -C "$LB_MIRROR" remote set-url origin "$LB_URL"
+                    else
+                        git clone --mirror "$LB_URL" "$LB_MIRROR"
+                    fi
+                elif ! git -C "$LB_MIRROR" cat-file -e "$LB_SHA^{commit}" 2>/dev/null; then
+                    if [ -n "$seed" ]; then
+                        git -C "$LB_MIRROR" fetch "$seed"
+                    else
+                        git -C "$LB_MIRROR" fetch --prune --tags origin "+refs/heads/*:refs/heads/*"
+                    fi
+                fi
+                git -C "$LB_MIRROR" worktree prune
+            '
+        '''
+    }
+    return mirror
+}
+
 // Create the per-build tree. Returns [mirror:, base:, tree:, out:].
 //   base = per-build private directory (debuild drops .deb/.changes into it)
 //   tree = base/src, the checkout itself
 //   out  = base/dist, the staged local apt repository
-def localBuildTree(String root, String gitUrl, String gitCommit, String buildId) {
-    def slug   = gitUrl.replaceAll(/[^A-Za-z0-9._-]/, '_')
-    def mirror = root + '/ref/' + slug + '.git'
+def localBuildTree(String root, String gitUrl, String gitCommit, String buildId, String seedDir = '') {
+    def mirror = seedNodeMirror(root, gitUrl, gitCommit, seedDir)
     def base   = root + '/build/' + buildId
     def t      = [mirror: mirror, base: base, tree: base + '/src', out: base + '/dist']
-    withEnv(["LB_ROOT=${root}", "LB_MIRROR=${mirror}", "LB_BASE=${base}",
-             "LB_TREE=${t.tree}", "LB_OUT=${t.out}",
-             "LB_URL=${gitUrl}", "LB_SHA=${gitCommit}"]) {
+    withEnv(["LB_MIRROR=${mirror}", "LB_BASE=${base}",
+             "LB_TREE=${t.tree}", "LB_OUT=${t.out}", "LB_SHA=${gitCommit}"]) {
         sh '''
             set -eu
-            case "$LB_ROOT/$LB_BASE/$LB_MIRROR" in */*/*) : ;; *) echo "refusing: bad build root"; exit 1;; esac
-            mkdir -p "$LB_ROOT/ref" "$LB_ROOT/build" "$LB_ROOT/locks"
-            lock="$LB_ROOT/locks/$(basename "$LB_MIRROR").lock"
-            # Serialise mirror maintenance between concurrent builds on this node.
-            flock "$lock" sh -c '
-                set -eu
-                if [ ! -d "$LB_MIRROR" ]; then
-                    git clone --mirror "$LB_URL" "$LB_MIRROR"
-                elif ! git -C "$LB_MIRROR" cat-file -e "$LB_SHA^{commit}" 2>/dev/null; then
-                    git -C "$LB_MIRROR" fetch --prune --tags origin "+refs/heads/*:refs/heads/*"
-                fi
-                git -C "$LB_MIRROR" worktree prune
-            '
-            rm -rf "$LB_BASE"
+            if [ -d "$LB_BASE" ]; then
+                # Node-local disk is not root_squash, unlike the NFS workspace.
+                sudo chown -R jenkins:jenkins "$LB_BASE" 2>/dev/null || true
+                find "$LB_BASE" -mindepth 1 -delete 2>/dev/null || true
+                rm -rf "$LB_BASE" 2>/dev/null || true
+            fi
             mkdir -p "$LB_OUT"
             git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
         '''
@@ -98,8 +136,8 @@ def localBuildTree(String root, String gitUrl, String gitCommit, String buildId)
     return t
 }
 
-// Tear the per-build tree down again. Uses the NFS-safe `find -delete` pattern
-// (runs as the jenkins uid, needs no root) rather than `sudo rm`.
+// Tear the per-build tree down again. find -delete as jenkins, with chown
+// recovery for root-owned leftovers from buildImage.inside{}.
 def localBuildTreeRelease(Map t) {
     withEnv(["LB_MIRROR=${t.mirror}", "LB_BASE=${t.base}", "LB_TREE=${t.tree}"]) {
         sh '''
@@ -107,6 +145,7 @@ def localBuildTreeRelease(Map t) {
             git -C "$LB_MIRROR" worktree remove --force "$LB_TREE" 2>/dev/null || true
             git -C "$LB_MIRROR" worktree prune 2>/dev/null || true
             if [ -n "$LB_BASE" ] && [ -d "$LB_BASE" ]; then
+                sudo chown -R jenkins:jenkins "$LB_BASE" 2>/dev/null || true
                 find "$LB_BASE" -mindepth 1 -delete 2>/dev/null || true
                 rmdir -- "$LB_BASE" 2>/dev/null || true
             fi
@@ -126,9 +165,10 @@ node() {
             // Run the one github.com checkout of this build on node-local disk,
             // off the shared NFS workspace export, so a concurrent build of this
             // same job on another node cannot land in the same directory.
-            ws(bootstrapWs(nodeLocalRoot())) {
-                // The one and only github.com checkout of this build.
+            def root = nodeLocalRoot()
+            ws(bootstrapWs(root)) {
                 scmVars = checkout scm
+                seedNodeMirror(root, scmVars.GIT_URL, scmVars.GIT_COMMIT, pwd())
             }
         }
     }

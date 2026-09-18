@@ -121,13 +121,16 @@ def seedNodeMirror(String root, String gitUrl, String gitCommit, String seedDir 
 
 // Create the per-build tree. Returns [mirror:, base:, tree:, out:].
 //   base = per-build private directory (debuild drops .deb/.changes into it)
-//   tree = base/src, the checkout itself
+//   tree = checkout; last path component MUST be unique per concurrent
+//          worktree of the same mirror (git names worktrees/ after basename,
+//          so a shared "src" collided: "fatal: not a git repository:
+//          .../worktrees/src").
 //   out  = base/dist, the staged local apt repository
 def localBuildTree(String root, String gitUrl, String gitCommit, String buildId, String seedDir = '') {
     def mirror = seedNodeMirror(root, gitUrl, gitCommit, seedDir)
     def base   = root + '/build/' + buildId
-    def t      = [mirror: mirror, base: base, tree: base + '/src', out: base + '/dist']
-    withEnv(["LB_MIRROR=${mirror}", "LB_BASE=${base}",
+    def t      = [mirror: mirror, base: base, tree: base + '/src-' + buildId, out: base + '/dist']
+    withEnv(["LB_ROOT=${root}", "LB_MIRROR=${mirror}", "LB_BASE=${base}",
              "LB_TREE=${t.tree}", "LB_OUT=${t.out}", "LB_SHA=${gitCommit}"]) {
         sh '''
             set -eu
@@ -137,8 +140,9 @@ def localBuildTree(String root, String gitUrl, String gitCommit, String buildId,
                 find "$LB_BASE" -mindepth 1 -delete 2>/dev/null || true
                 rm -rf "$LB_BASE" 2>/dev/null || true
             fi
-            mkdir -p "$LB_OUT"
-            git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
+            mkdir -p "$LB_OUT" "$(dirname "$LB_TREE")"
+            lock="$LB_ROOT/locks/$(basename "$LB_MIRROR").lock"
+            flock "$lock" git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
         '''
     }
     return t
@@ -173,7 +177,7 @@ properties([
 ])
 
 def scmVars = [:]
-node() {
+node('arm64') {
     ansiColor('xterm') {
         stage('SCM Checkout') {
             // Run the one github.com checkout of this build on node-local disk,
@@ -208,7 +212,7 @@ distributions.each { distro ->
         def artifacts = []
         def buildVer = ''
 
-        node {
+        node('arm64') {
             ansiColor('xterm') {
                 def root = nodeLocalRoot()
                 def buildId = localBuildId(distroCode)

@@ -124,8 +124,8 @@ def seedNodeMirror(String root, String gitUrl, String gitCommit, String seedDir 
 def localBuildTree(String root, String gitUrl, String gitCommit, String buildId, String seedDir = '') {
     def mirror = seedNodeMirror(root, gitUrl, gitCommit, seedDir)
     def base   = root + '/build/' + buildId
-    def t      = [mirror: mirror, base: base, tree: base + '/src', out: base + '/dist']
-    withEnv(["LB_MIRROR=${mirror}", "LB_BASE=${base}",
+    def t      = [mirror: mirror, base: base, tree: base + '/src-' + buildId, out: base + '/dist']
+    withEnv(["LB_ROOT=${root}", "LB_MIRROR=${mirror}", "LB_BASE=${base}",
              "LB_TREE=${t.tree}", "LB_OUT=${t.out}", "LB_SHA=${gitCommit}"]) {
         sh '''
             set -eu
@@ -135,8 +135,9 @@ def localBuildTree(String root, String gitUrl, String gitCommit, String buildId,
                 find "$LB_BASE" -mindepth 1 -delete 2>/dev/null || true
                 rm -rf "$LB_BASE" 2>/dev/null || true
             fi
-            mkdir -p "$LB_OUT"
-            git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
+            mkdir -p "$LB_OUT" "$(dirname "$LB_TREE")"
+            lock="$LB_ROOT/locks/$(basename "$LB_MIRROR").lock"
+            flock "$lock" git -C "$LB_MIRROR" worktree add --detach --force "$LB_TREE" "$LB_SHA"
         '''
     }
     return t

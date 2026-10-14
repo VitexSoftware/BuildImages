@@ -173,6 +173,38 @@ def localBuildTreeRelease(Map t) {
 }
 // --- end node-local workspace isolation -----------------------------------
 
+// --- Wait for the package repository ---------------------------------------
+// buildBlocker only keeps a job from *starting* while RebulidDEBRepoByAnsible
+// runs; a build that is already in flight still reaches `apt-get update` while
+// the repository is regenerated and gets 403 / missing Release or Packages.
+// The Jenkins API is not readable anonymously, so poll what apt actually needs:
+// InRelease plus every Packages.gz it lists for this architecture.
+def waitForRepo(String codename, String arch) {
+    if (!(codename ==~ /^[a-z0-9]+$/) || !(arch ==~ /^[a-z0-9]+$/)) { error("Invalid codename/arch: ${codename}/${arch}") }
+    timeout(time: 45, unit: 'MINUTES') {
+        waitUntil(initialRecurrence: 15000, quiet: true) {
+            withEnv(["WR_CODENAME=${codename}", "WR_ARCH=${arch}"]) {
+                def rc = sh(returnStatus: true, script: '''
+                    set -u
+                    base="https://repo.vitexsoftware.com/dists/$WR_CODENAME"
+                    code=$(curl -s -o /tmp/inrelease.$$ -w '%{http_code}' --max-time 20 "$base/InRelease") || code=000
+                    if [ "$code" != 200 ]; then echo "repo not ready: InRelease -> $code"; rm -f /tmp/inrelease.$$; exit 1; fi
+                    idx=$(grep -oE "[A-Za-z0-9._-]+/binary-$WR_ARCH/Packages\\.gz" /tmp/inrelease.$$ | grep -v '^debian-installer/' | sort -u)
+                    rm -f /tmp/inrelease.$$
+                    if [ -z "$idx" ]; then echo "repo not ready: no $WR_ARCH indexes listed"; exit 1; fi
+                    for f in $idx; do
+                        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$base/$f") || code=000
+                        if [ "$code" != 200 ]; then echo "repo not ready: $f -> $code"; exit 1; fi
+                    done
+                    echo "repo ready: $WR_CODENAME/$WR_ARCH"
+                ''')
+                return rc == 0
+            }
+        }
+    }
+}
+// --- end wait for the package repository -----------------------------------
+
 properties([
     copyArtifactPermission('*'),
     buildBlocker(
@@ -267,6 +299,7 @@ distributions.each { distro ->
                         buildImage = docker.image(vendor + '/' + distro)
                     }
                     stage('Build ' + branchKey) {
+                        waitForRepo(distroCode, architecture)
                         // -v mounts the node-local tree into the container; the
                         // shared NFS workspace is not used for building at all.
                         buildImage.inside('-v ' + t.base + ':' + t.base) {
@@ -318,6 +351,8 @@ distributions.each { distro ->
                     }
 
                     stage('Test ' + branchKey) {
+                        // The repository may be regenerated while we were building.
+                        waitForRepo(distroCode, architecture)
                         buildImage.inside('-v ' + t.base + ':' + t.base) {
                             dir(t.tree) {
                                 def debconf_debug = 0 //Set to "5" or "developer" to debug debconf

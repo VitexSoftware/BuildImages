@@ -203,7 +203,12 @@ node() {
                         def value = line.substring('Architecture:'.length()).trim()
                         // 'armhf' is not offered: there is no armhf agent, so
                         // node('armhf') would block forever and hang the build.
-                        architectures = (value == 'any') ? ['amd64', 'arm64'] : value.split(/\s+/)
+                        def wanted = (value == 'any') ? ['amd64', 'arm64'] : (value == 'all') ? ['amd64'] : value.split(/\s+/).toList()
+                        // The value comes from the repository's debian/control and ends up
+                        // in node labels and build paths: accept known agents only.
+                        def allowed = ['amd64', 'arm64']
+                        wanted.each { a -> if (!(a in allowed)) { error("Unsupported Architecture '${a}' in debian/control") } }
+                        architectures = wanted
                         break
                     }
                 }

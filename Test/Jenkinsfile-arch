@@ -1,16 +1,25 @@
 #!groovy
 
-// Part of https://github.com/VitexSoftware/BuildImages
+// Multi-architecture variant of https://github.com/VitexSoftware/BuildImages/blob/main/Test/Jenkinsfile
+// Same node-local build trees (no source stash, nothing built in the shared NFS
+// workspace), plus an architecture axis: every distro is built on every architecture
+// of the package. node(architecture) relies on the platformlabeler plugin labels.
 
-String[] architectures = [] // 'amd64', 'aarch64', 'arm', 'i386'
-String[] distributions = ['debian:bullseye', 'debian:bookworm', 'debian:forky', 'ubuntu:focal', 'ubuntu:jammy']
+String[] distributions = [
+			'debian:bookworm',
+			'debian:trixie',
+			// 'debian:forky', // Disabled: Forky is still unstable/research-only.
+			//                 // The full Debian package ecosystem is not yet available for Forky.
+			//                 // Re-enable once the stack builds cleanly for Forky.
+			'ubuntu:jammy',
+			'ubuntu:noble',
+			'ubuntu:resolute',
+]
+
+String[] architectures = [] // inferred from debian/control: 'any' -> amd64 + arm64
 
 String vendor = 'vitexsoftware'
-String distribution = ''
-String architecture = ''
 //String distroFamily = ''
-String distroCodename = ''
-String ver = ''
 
 // --- Node-local workspace isolation ---------------------------------------
 // /var/lib/jenkins/workspace is ONE shared NFS4 export from the controller,
@@ -117,7 +126,10 @@ def seedNodeMirror(String root, String gitUrl, String gitCommit, String seedDir 
 
 // Create the per-build tree. Returns [mirror:, base:, tree:, out:].
 //   base = per-build private directory (debuild drops .deb/.changes into it)
-//   tree = base/src, the checkout itself
+//   tree = checkout; last path component MUST be unique per concurrent
+//          worktree of the same mirror (git names worktrees/ after basename,
+//          so a shared "src" collided: "fatal: not a git repository:
+//          .../worktrees/src").
 //   out  = base/dist, the staged local apt repository
 def localBuildTree(String root, String gitUrl, String gitCommit, String buildId, String seedDir = '') {
     def mirror = seedNodeMirror(root, gitUrl, gitCommit, seedDir)
@@ -180,20 +192,19 @@ node() {
             // same job on another node cannot land in the same directory.
             def root = nodeLocalRoot()
             ws(bootstrapWs(root)) {
+                // The one and only github.com checkout of this build. Objects
+                // are copied into the node-local mirror from this directory
+                // (git clone --mirror of a local path), so parallel branches
+                // never contact github.com again on this node.
                 scmVars = checkout scm
                 seedNodeMirror(root, scmVars.GIT_URL, scmVars.GIT_COMMIT, pwd())
-                def control = readFile(file:  pwd() + '/debian/control')
-                def lines = control.readLines()
-                for (line in lines) {
-                    if (line.trim()) {
-                        def (key,value) = line.split(': ').collect { it.trim() }
-                        if (key == 'Architecture') {
-                            if (value == 'any') {
-                                architectures = ['amd64', 'armhf', 'arm64']
-                            } else {
-                                architectures = value.trim().split(/\s+/)
-                            }
-                        }
+                for (line in readFile(file: pwd() + '/debian/control').readLines()) {
+                    if (line.startsWith('Architecture:')) {
+                        def value = line.substring('Architecture:'.length()).trim()
+                        // 'armhf' is not offered: there is no armhf agent, so
+                        // node('armhf') would block forever and hang the build.
+                        architectures = (value == 'any') ? ['amd64', 'arm64'] : value.split(/\s+/)
+                        break
                     }
                 }
             }
@@ -204,59 +215,79 @@ node() {
 String gitUrl = scmVars.GIT_URL
 String gitCommit = scmVars.GIT_COMMIT
 
-architectures.each {
-    architecture = it
+def branches = [:]
+distributions.each { distro ->
+  architectures.each { arch ->
+    String branchKey = distro + '/' + arch
+    branches[branchKey] = {
+        def distroName = distro
+        def architecture = arch
+        println  "Dist:" + distroName + " Arch:" + architecture
 
-    println 'Arch: ' + architecture
-
-    distributions.each {
-        distribution = it
-
-        println  'Dist:' + distribution
-
-        def dist = distribution.split(':')
-        //      distroFamily = dist[0]
-        distroCodename = dist[1]
-
+        def dist = distroName.split(':')
+        def distroFamily = dist[0]
+        def distroCode = dist[1]
         def buildImage = ''
+        def artifacts = []
+        def buildVer = ''
 
         node(architecture) {
             ansiColor('xterm') {
                 def root = nodeLocalRoot()
-                def buildId = localBuildId(distroCodename, architecture)
+                def buildId = localBuildId(distroCode, architecture)
                 def t = null
                 try {
-                    stage('Checkout ' + architecture + ' ' + distribution) {
+                    stage('Checkout ' + branchKey) {
+                        // Bare `git fetch origin` has no Jenkins SSH creds. If this
+                        // node was not the SCM bootstrap node, seed its mirror from
+                        // a credentialed checkout on local disk first.
+                        def needSeed = sh(script: """
+                            set -eu
+                            slug=\$(printf '%s' '${gitUrl}' | sed 's/[^A-Za-z0-9._-]/_/g')
+                            mirror="${root}/ref/\${slug}.git"
+                            if [ -d "\$mirror" ] && git -C "\$mirror" cat-file -e '${gitCommit}^{commit}' 2>/dev/null; then
+                                echo no
+                            else
+                                echo yes
+                            fi
+                        """, returnStdout: true).trim()
+                        if (needSeed == 'yes') {
+                            ws(bootstrapWs(root) + '-seed-' + distroCode + '-' + architecture) {
+                                def sv = checkout scm
+                                seedNodeMirror(root, sv.GIT_URL, sv.GIT_COMMIT, pwd())
+                            }
+                        }
                         t = localBuildTree(root, gitUrl, gitCommit, buildId)
                         echo "Node-local build tree: ${t.tree} (node ${env.NODE_NAME})"
-                        buildImage = docker.image(vendor + '/' + distribution)
-                        dir(t.tree) {
-                            sh 'git checkout debian/changelog'
-                            def version = sh(
-                                script: 'dpkg-parsechangelog --show-field version',
-                                returnStdout: true
-                            ).trim()
-                            ver = version + '.' + env.BUILD_NUMBER  + '~' + distroCodename
-                        }
+                        buildImage = docker.image(vendor + '/' + distro)
                     }
-                    stage('Build ' + architecture + ' ' + distribution) {
+                    stage('Build ' + branchKey) {
                         // -v mounts the node-local tree into the container; the
                         // shared NFS workspace is not used for building at all.
                         buildImage.inside('-v ' + t.base + ':' + t.base) {
                             dir(t.tree) {
-                                // Set unique build directories for this parallel build to avoid conflicts
+                                sh 'git checkout debian/changelog'
+                                def version = sh(
+                                    script: 'dpkg-parsechangelog --show-field Version',
+                                    returnStdout: true
+                                ).trim()
+                                buildVer = version + '.' + env.BUILD_NUMBER + '~' + distroCode
+                                // Unique build directories for this parallel build to avoid conflicts
                                 def uniqueBuildId = buildId
                                 sh '''
                                     export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
                                     export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
                                     mkdir -p "$DH_INTERNAL_BUILDDIR" "$TMPDIR"
                                 '''
-                                sh 'dch -b -v ' + ver  + ' "' + env.BUILD_TAG  + '"'
+                                withEnv(["BUILDVER=${buildVer}"]) {
+                                    sh 'dch -b -v "$BUILDVER" "$BUILD_TAG"'
+                                }
                                 sh 'sudo apt-get update --allow-releaseinfo-change'
+                                sh 'sudo rm -rf debian/$(dpkg-parsechangelog --show-field Source)/ debian/.debhelper/ debian/tmp/'
                                 sh '''
                                     export DH_INTERNAL_BUILDDIR="/tmp/debhelper-build-''' + uniqueBuildId + '''"
                                     export TMPDIR="/tmp/build-''' + uniqueBuildId + '''"
-                                    debuild-pbuilder -i -us -uc -b
+                                    debuild-pbuilder -r"sudo -E" -i -us -uc -b
                                 '''
                                 // debuild drops .deb/.changes into `..`, which is
                                 // now t.base -- private to this build on this node,
@@ -266,36 +297,79 @@ architectures.each {
                                         set -eu
                                         mkdir -p "$LB_OUT"
                                         find "$LB_OUT" -mindepth 1 -delete 2>/dev/null || true
-                                        for deb in $(awk '{print $1}' debian/files); do
+                                        while read -r deb _; do
+                                            case "$deb" in -*) continue;; esac
+                                            [ -n "$deb" ] || continue
                                             mv -- "../$deb" "$LB_OUT/"
-                                        done
+                                        done < debian/files
                                     '''
                                 }
+                                artifacts = sh (
+                                    script: "cat debian/files | awk '{print \$1}'",
+                                    returnStdout: true
+                                ).trim().split('\n')
                             }
                         }
                     }
 
-                    stage('Test ' + architecture + ' ' + distribution) {
+                    stage('Test ' + branchKey) {
                         buildImage.inside('-v ' + t.base + ':' + t.base) {
                             dir(t.tree) {
                                 def debconf_debug = 0 //Set to "5" or "developer" to debug debconf
                                 withEnv(["LB_OUT=${t.out}"]) {
-                                    sh 'cd "$LB_OUT" ; dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz'
+                                    sh 'cd "$LB_OUT" ; dpkg-scanpackages . /dev/null > Packages; gzip -9c Packages > Packages.gz'
                                     sh 'echo "deb [trusted=yes] file://$LB_OUT/ ./" | sudo tee /etc/apt/sources.list.d/local.list'
                                     sh 'sudo apt-get update --allow-releaseinfo-change'
                                     sh 'echo "INSTALATION"'
 
-                                    sh 'IFS="\n\b"; for package in  `cat debian/files | awk -F_ \'{print \$1}\'` ; do  echo -e "${GREEN} installing ${package} on `lsb_release -sc` ${ENDCOLOR} " ; sudo  DEBIAN_FRONTEND=noninteractive DEBCONF_DEBUG=' + debconf_debug  + ' apt-get -y install $LB_OUT/$package ; done;'
+                                    def installOrder = []
+
+                                    def sorted_artifacts = artifacts.toList()
+
+                                    // If installOrder is empty, install all produced packages
+                                    if (installOrder.isEmpty()) {
+                                        sorted_artifacts.each { deb_file ->
+                                            if (deb_file.endsWith('.deb')) {
+                                                def pkgName = deb_file.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                                if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
+                                                withEnv(["PKG=${pkgName}"]) {
+                                                    sh 'echo "Installing $PKG on $(lsb_release -sc)"'
+                                                    sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // Install packages in specified order
+                                        installOrder.each { pkgPrefix ->
+                                            def debFile = null
+                                            for (item in sorted_artifacts) {
+                                                def itemStr = item.toString()
+                                                if (itemStr.startsWith(pkgPrefix) && itemStr.endsWith('.deb')) {
+                                                    debFile = itemStr
+                                                    break
+                                                }
+                                            }
+                                            if (debFile) {
+                                                def pkgName = debFile.tokenize('/')[-1].replaceFirst(/_.*/, '')
+                                                if (!(pkgName ==~ /^[a-z0-9][a-z0-9+.\-]+$/)) { error("Invalid package name: ${pkgName}") }
+                                                withEnv(["PKG=${pkgName}"]) {
+                                                    sh 'echo "Installing $PKG on $(lsb_release -sc)"'
+                                                    sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install "$PKG"'
+                                                }
+                                            }
+                                        }
+                                    }
                                     sh 'sudo rm -f /etc/apt/sources.list.d/local.list'
                                 }
                             }
                         }
                     }
-                    stage('Copy artifacts ' + architecture + ' ' + distribution ) {
-                        // stash/archive can only reach files under $WORKSPACE, so
-                        // stage them into a per-build subdirectory there. The name
-                        // carries job, build, distro, arch, node and executor, so
-                        // two nodes sharing this one NFS workspace cannot collide.
+                    stage('Archive artifacts ' + branchKey) {
+                        // archiveArtifacts can only reach files under $WORKSPACE,
+                        // so stage them into a per-build subdirectory there. The
+                        // subdirectory name carries job, build, distro, node and
+                        // executor, so two nodes sharing this one NFS workspace
+                        // cannot collide on it.
                         def stageDir = 'dist/' + buildId
                         withEnv(["LB_OUT=${t.out}", "LB_STAGE=${stageDir}"]) {
                             sh '''
@@ -306,8 +380,10 @@ architectures.each {
                                 cp -a "$LB_OUT"/. "$WORKSPACE/$LB_STAGE"/
                             '''
                         }
-                        stash includes: stageDir + '/**', name: 'dist-' + buildId
-                        archiveArtifacts artifacts: stageDir + '/*.deb', allowEmptyArchive: true
+                        artifacts.each { deb_file ->
+                            println "Archiving artifact: " + deb_file
+                            archiveArtifacts artifacts: stageDir + '/' + deb_file
+                        }
                         // NFS-safe cleanup of the staging directory: plain
                         // find/delete as the jenkins uid, because root_squash on
                         // the workspace export makes `sudo rm` a no-op there.
@@ -323,7 +399,7 @@ architectures.each {
                         }
                     }
                 } finally {
-                    stage('Cleanup ' + architecture + ' ' + distribution) {
+                    stage('Cleanup ' + branchKey) {
                         sh '''
                             rm -rf "/tmp/debhelper-build-''' + buildId + '''" || true
                             rm -rf "/tmp/build-''' + buildId + '''" || true
@@ -333,5 +409,14 @@ architectures.each {
                 }
             }
         }
+    }
+  }
+}
+
+parallel branches
+
+node('aptly') {
+    stage('Publish to Aptly') {
+	publishDebToAptly()
     }
 }

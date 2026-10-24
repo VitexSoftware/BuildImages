@@ -28,6 +28,8 @@ RUN chmod +x /usr/local/bin/add-vitexsoftware-apt.sh \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
     && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US:en \
     && sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini \
+    && for d in /etc/php/*/cli/conf.d; do printf 'session.upload_progress.enabled=0\nfatal_error_backtraces=0\n' > "$d/99-php2shell.ini"; done \
+    && php -v | head -1 \
     && touch /tmp/mailfile \
     && chmod uog+rw /tmp/mailfile \
     && (getent group 222 >/dev/null || groupadd -g 222 jenkins) \

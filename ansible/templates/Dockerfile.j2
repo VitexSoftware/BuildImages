@@ -17,7 +17,7 @@ RUN \
     echo "Customized the sudoers file for passwordless access to the jenkins user!" && \
     echo "jenkins user:";  su - jenkins -c id
 
-RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile
+RUN sed -i -e '/sendmail_path/c\sendmail_path="cat - >> /tmp/mailfile"' /etc/php/*/*/php.ini ; touch /tmp/mailfile ; chmod uog+rw /tmp/mailfile ; for d in /etc/php/*/cli/conf.d; do printf 'session.upload_progress.enabled=0\nfatal_error_backtraces=0\n' > "$d/99-php2shell.ini"; done ; php -v | head -1
 
 RUN echo "deb [signed-by=/usr/share/keyrings/vitexsoftware.gpg] http://repo.vitexsoftware.com $(lsb_release -sc) main backports" | tee /etc/apt/sources.list.d/vitexsoftware.com.list;  apt update
 

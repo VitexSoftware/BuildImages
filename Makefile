@@ -95,3 +95,10 @@ clean:
 
 reset: clean all
 
+# Jenkins Kubernetes agent (amd64 only)
+.PHONY: jenkins-agent jenkins-agent-push
+jenkins-agent:
+	docker build --platform linux/amd64 -f jenkins-agent/Dockerfile -t $(NAMESPACE)/jenkins-agent:trixie .
+
+jenkins-agent-push: jenkins-agent
+	docker push $(NAMESPACE)/jenkins-agent:trixie
